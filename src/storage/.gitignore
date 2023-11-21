@@ -1,0 +1,4 @@
+modelimages/*
+civitai_cache/*
+!modelimages/placeholder.png
+!civitai_cache/.gitkeep
