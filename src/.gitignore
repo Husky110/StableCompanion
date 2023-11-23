@@ -3,6 +3,8 @@
 /public/build
 /public/hot
 /public/storage
+/public/modelimages
+!/public/modelimages/placeholder.png
 /storage/*.key
 /vendor
 .env
