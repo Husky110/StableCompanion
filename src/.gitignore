@@ -5,6 +5,8 @@
 /public/storage
 /public/modelimages
 !/public/modelimages/placeholder.png
+/public/ai_images
+!/public/modelimages/.gitkeep
 /storage/*.key
 /vendor
 .env
