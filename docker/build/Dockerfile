@@ -28,11 +28,16 @@ RUN apk add --no-cache \
   php81-phar \
   php81-session \
   php81-tokenizer \
+  php81-xml \
+  php81-xmlwriter \
   php81-zip \
   supervisor
 
 # Create symlink so programs depending on `php` still function
 RUN ln -s /usr/bin/php81 /usr/bin/php
+
+# Installing composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
 # Configure nginx
 COPY /files/nginx.conf /etc/nginx/nginx.conf

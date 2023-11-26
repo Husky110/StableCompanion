@@ -1,6 +1,6 @@
 # StableCompanion (SC)
 
-## IMPORTANT: This project is still "work in progress"! Do not use it for now, as there will be unannounced changes in everything! Much of the stuff in this readme-file is for future versions!
+## IMPORTANT: This project is still "work in progress"! 
 
 ## About
 StableCompanion is a side-software meant to accompany an already installed instance of A1111s-WebUI.
@@ -20,9 +20,11 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 ### Checkpoints
   - Management of existing checkpoints (CRUD)
   - Import checkpoints from CivitAI
+  - Link exisiting files to a CivitAI-Model
+  - Update checkpoints from CivitAI
 
 ## Planned Features
-- Import Checkpoints, LoRAs and Embeddings from CivitAI
+- Import LoRAs and Embeddings from CivitAI
 - Manage your Checkpoints, LoRAs and Embeddings
 - Toolbox for testing and playing around
 - Build prompts and store them
@@ -30,29 +32,36 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 ## Setup
 ### Prerequisites
 - OS: Does not matter
-- installed Docker-Engine and docker-compose
-- Installed and running instance of A1111-WebUI with the following parameters:
-  - `--api` in launch-commands
-  - Following extensions installed:
-    - Adetailer (https://github.com/Bing-su/adetailer)
-    - Regional Prompter (https://github.com/hako-mikan/sd-webui-regional-prompter)
-    - ControlNet (https://github.com/Mikubill/sd-webui-controlnet)
+- installed Docker-Engine (https://docs.docker.com/engine/install/) and docker compose (note: docker compose can be installed on Windows aswell -> see https://www.ionos.com/digitalguide/server/configuration/install-docker-compose-on-windows/)
+- Requirements for later on (right now, they are not needed, but they will be in the future!)
+  - Installed and running instance of A1111-WebUI with the following parameters:
+    - `--api` in launch-commands
+    - Following extensions installed:
+      - Adetailer (https://github.com/Bing-su/adetailer)
+      - Regional Prompter (https://github.com/hako-mikan/sd-webui-regional-prompter)
+      - ControlNet (https://github.com/Mikubill/sd-webui-controlnet)
 ### Setup
-  1. clone this repo or download a release 
-  2. cd into the docker-directory and copy the docker-compose.yml.original to docker-compose.yml
-  3. modify the newly created docker-compose.yml to your need (should be self-explaining inside the file)
-  4. fireup A1111-WebUI (if not already up)
-  5. run `docker-compose up -d` inside the docker-directory and go to http://localhost:7861
+  1. Clone this repo
+  2. Cd into the docker-directory and copy the docker-compose.yml.original to docker-compose.yml
+  3. Modify the newly created docker-compose.yml to your need (should be self-explaining inside the file - if you need help, see https://docs.docker.com/storage/volumes/#use-a-volume-with-docker-compose)
+  4. Run `docker compose up` (if you have the composer-plugin installed, that should work fine aswell) inside the docker-directory and go to http://localhost:7861
+  5. The first run might take a bit, since composer has to install all dependencies - just wait a bit until you read `INFO exited: startup (exit status 0; expected)` - Notice: If you read `INFO gave up: startup entered FATAL state, too many start retries too quickly` on start - that's nothing to worry about. The startup-script bites itself a bit with supervisor. As long as php-fpm, nginx and aria are running you are fine. :) 
+  6. Fireup A1111-WebUI (if not already up)
+
+### Update
+  1. Run `git pull` inside the repo-folder
+  2. Cd into the docker-directory and run `docker compose build`
+  3. Run `docker compose up`
+
 ### Usage
   There are some "rules" you should follow when using StableCompanion. Here they are:
 - Do NOT rename files within the checkpoints-, loras- or embedding-directory (that also includes changing file-extensions)! StableCompanion will detect them as "new" files which will lead to duplicates in the database!
 - StableCompanion does create the folders "sd" and "xl" inside your checkpoint-, lora- and embedding-volumes. This is done to provide a file-separation for regular models and Xl-stuff. 
-- When you import a checkpoint, lora, or embedding from CivitAI - StableCompanion will put the CivitAI-ID and -versionID in front of the filename. This is so that a new import or update does not accidentally overwrites an existing file if the model-maintainer keeps using repetitive filenames.
+- When you import a checkpoint, lora, or embedding from CivitAI - StableCompanion will put the CivitAI-ID and -versionID in front of the filename. This is so that a new import or update does not accidentally overwrite an existing file if the model-maintainer keeps using repetitive filenames.
 - Within each folder (checkpoints, loras, embeddings) you can create a directory with the name "no_scan" - StableCompanion scans your files recursively, but EXPLICITLY ignore that directory. In there you can put all your files that are still in training or should not be used by StableCompanion at all.
 - All requests against the CivitAI-API are beeing cached for one hour or until the container is restarted. I just try to play nice here - so please follow suit. If you wanna look for updates - there are buttons for that you can hit once every hour.
-- If you read `INFO gave up: startup entered FATAL state, too many start retries too quickly`in the logs - that's nothing to worry about. The startup-script bites itself a bit with supervisor. As long as php-fpm, nginx and aria are running you are fine. :)
 - RTFM and READ THE TEXTS ON SCREEN! I've tried to make you aware of what is happening in every step, so please read what is on screen and make conscious clicks. :)
-- Sometimes, when you download multiple files at once (max. 5) it's possible that they show up as 100%-done in the downloads tab. This is due to a bug in Aria2. Just wait a bit (10 seconds) if you are unsure.
+- Sometimes, when you download multiple files at once (max. 5) it's possible that they show up as 100%-done in the downloads tab on the first seconds of downloading. This is due to a bug in Aria2. Just wait a bit (10 seconds) if you are unsure.
 
 ## PAQ
 Since there are no "Frequently asked questions" yet I'm doing a "Possible asked questions." :)
