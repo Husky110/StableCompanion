@@ -232,7 +232,7 @@ class ViewCheckpoint extends ViewRecord
                                         ->schema([
                                             TextEntry::make('civit_notes')
                                                 ->getStateUsing(fn() => new HtmlString($this->record->civit_notes))
-                                                ->extraAttributes(['style' => 'max-height: 200px; overflow-y: scroll;'])
+                                                ->extraAttributes(['style' => 'max-height: 200px; overflow: scroll;'])
                                                 ->label(false)
                                         ])
                                         ->visible(fn() => $this->record->civit_notes != null)
