@@ -1,0 +1,21 @@
+version: "3"
+services:
+  stable_companion:
+    container_name: "companion_frontend"
+    ports:
+      - "7861:8080"
+    build:
+      context: build
+      dockerfile: ./Dockerfile
+    volumes:
+    # Point this to your checkpoints-folder:
+      - ../../sc_data/checkpoints:/data/checkpoints
+    # Point this to your Loras-folder:
+      - ../../sc_data/loras:/data/loras
+    # Point this to your Embeddings-folder:
+      - ../../sc_data/embeddings:/data/embeddings
+    # Leave this one alone if you are on Linux or Mac - Change it to WindowsPaths if needed
+      - ../src:/var/www
+    environment:
+      # Set this to your hostname if you wanna use StableCompanion outside localhost (f.e. in a network, or online)
+      - URL=http://localhost:7861

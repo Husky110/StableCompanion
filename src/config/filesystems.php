@@ -36,6 +36,38 @@ return [
             'throw' => false,
         ],
 
+        'modelimages' => [
+            'driver' => 'local',
+            'root' => public_path('modelimages'),
+            'url' => env('APP_URL').'/modelimages'
+        ],
+
+        'ai_images' => [
+            'driver' => 'local',
+            'root' => public_path('ai_images'),
+            'url' => env('APP_URL').'/ai_images'
+        ],
+
+        'civitai_cache' => [
+            'driver' => 'local',
+            'root' => storage_path('civitai_cache'),
+        ],
+
+        'checkpoints' => [
+            'driver' => 'local',
+            'root' => '/data/checkpoints'
+        ],
+
+        'embeddings' => [
+            'driver' => 'local',
+            'root' => '/data/embeddings'
+        ],
+
+        'loras' => [
+            'driver' => 'local',
+            'root' => '/data/loras'
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
