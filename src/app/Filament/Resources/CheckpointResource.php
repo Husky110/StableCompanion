@@ -43,7 +43,7 @@ class CheckpointResource extends Resource
                     ->searchable()
                     ->getStateUsing(function ($record){
                         if(strlen($record->checkpoint_name) > 40){
-                            return substr($record->checkpoint_name).'...';
+                            return substr($record->checkpoint_name, 0, 40).'...';
                         } else {
                             return $record->checkpoint_name;
                         }
