@@ -36,6 +36,11 @@ return [
             'throw' => false,
         ],
 
+        'upload_temp' => [
+            'driver' => 'local',
+            'root' => storage_path('uploadtemp'),
+        ],
+
         'modelimages' => [
             'driver' => 'local',
             'root' => public_path('modelimages'),

@@ -3,27 +3,14 @@
 namespace App\Filament\Resources\CheckpointResource\Pages;
 
 use App\Filament\Resources\CheckpointResource;
-use App\Http\Helpers\Aria2Connector;
+use App\Filament\Resources\CheckpointResource\Helpers\CheckpointFilamentHelper;
 use App\Http\Helpers\CivitAIConnector;
 use App\Models\Checkpoint;
-use App\Models\CheckpointFile;
 use App\Models\CivitDownload;
 use App\Models\DataStructures\CivitAIModelType;
-use App\Models\Tag;
-use Closure;
 use Filament\Actions;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Get;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\HtmlString;
 
 class ListCheckpoints extends ListRecords
 {
@@ -43,30 +30,35 @@ class ListCheckpoints extends ListRecords
     {
         return [
             Actions\Action::make('civit-import')
-                ->form([Checkpoint::buildCivitAIDownloadWizard()])
+                ->form([CheckpointFilamentHelper::buildCivitAIDownloadWizard()])
                 ->action(function ($data){
                     $metaData = CivitAIConnector::getModelMetaByID($data['modelID']);
                     $checkpoint = Checkpoint::with(['files', 'activedownloads'])->where('civitai_id', $data['modelID'])->first();
-                    $canBeDownloaded = false;
-                    if($checkpoint != null){
-                        if(
-                            $checkpoint->files->where('civitai_version', $data['version'])->first() == null &&
-                            $checkpoint->activedownloads->where('version', $data['version'])->first() == null
-                        ){
-                            $canBeDownloaded = true;
-                        }
-                    } else {
+                    if($checkpoint == null){
                         Checkpoint::createNewCheckpointFromCivitAI($metaData, $data['sync_tags']);
-                        $canBeDownloaded = true;
                     }
 
-                    if($canBeDownloaded){
-                        CivitDownload::downloadFileFromCivitAI(
-                            CivitAIModelType::CHECKPOINT,
-                            $data['modelID'],
-                            $data['version'],
-                            $data['sync_examples']
-                        );
+                    foreach ($data['download_versions'] as $versionToDownload){
+                        if($checkpoint){
+                            if(
+                                $checkpoint->files->where('civitai_version', $versionToDownload)->first() == null &&
+                                $checkpoint->activedownloads->where('version', $versionToDownload)->first() == null
+                            ){
+                                CivitDownload::downloadFileFromCivitAI(
+                                    CivitAIModelType::CHECKPOINT,
+                                    $data['modelID'],
+                                    $versionToDownload,
+                                    $data['sync_examples']
+                                );
+                            }
+                        } else {
+                            CivitDownload::downloadFileFromCivitAI(
+                                CivitAIModelType::CHECKPOINT,
+                                $data['modelID'],
+                                $versionToDownload,
+                                $data['sync_examples']
+                            );
+                        }
                     }
                 })
                 ->label('Import from CivitAI')

@@ -1,2 +1,4 @@
 civitai_cache/*
 !civitai_cache/.gitkeep
+uploadtemp/*
+!uploadtemp/.gitkeep

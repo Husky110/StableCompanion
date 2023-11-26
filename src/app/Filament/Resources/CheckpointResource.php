@@ -72,7 +72,8 @@ class CheckpointResource extends Resource
             ->bulkActions([
 
             ])
-            ->poll('60s');
+            ->poll('60s')
+            ->defaultSort('checkpoint_name');
     }
 
     public static function getRelations(): array

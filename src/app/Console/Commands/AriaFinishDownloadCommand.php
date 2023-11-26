@@ -55,7 +55,7 @@ class AriaFinishDownloadCommand extends Command
                 if(rename($downloadPath, $filePath)){
                     $checkpointFile = $this->createCheckpointFile($civitAIDownload, 'sd/'.basename($filePath));
                     if($civitAIDownload->load_examples){
-                        $this->loadImagesForCheckpointFile($civitAIDownload, $checkpointFile);
+                        $checkpointFile->loadImagesFromCivitAIForThisFile();
                     }
                     $civitAIDownload->delete();
                 } else {
@@ -72,7 +72,7 @@ class AriaFinishDownloadCommand extends Command
                     $checkpointFile = $this->createCheckpointFile($civitAIDownload, 'xl/'.basename($filePath));
                     // loading Images for Checkpoint
                     if($civitAIDownload->load_examples){
-                        $this->loadImagesForCheckpointFile($civitAIDownload, $checkpointFile);
+                        $checkpointFile->loadImagesFromCivitAIForThisFile();
                     }
                     $civitAIDownload->delete();
                 } else {
@@ -107,44 +107,5 @@ class AriaFinishDownloadCommand extends Command
         ]);
         $checkpointFile->save();
         return $checkpointFile;
-    }
-
-    private function loadImagesForCheckpointFile(CivitDownload $download, CheckpointFile $checkpointFile)
-    {
-        $meta = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($download->civit_id, $download->version);
-        $counter = 0;
-        foreach ($meta['images'] as $metaImage){
-            if(
-                $metaImage['type'] != 'image' ||
-                isset($metaImage['meta']['prompt']) == false ||
-                isset($metaImage['meta']['negativePrompt']) == false ||
-                isset($metaImage['meta']['sampler']) == false ||
-                isset($metaImage['meta']['cfgScale']) == false ||
-                isset($metaImage['meta']['steps']) == false ||
-                isset($metaImage['meta']['seed']) == false ||
-                isset($metaImage['meta']['Size']) == false
-            ){
-                continue;
-            }
-            $counter++;
-            $filename = $download->civit_id.'_'.$download->version.'_'.basename($metaImage['url']);
-            Storage::disk('ai_images')->put($filename, file_get_contents($metaImage['url']));
-            $image = new AIImage([
-                'checkpoint_file_id' => $checkpointFile->id,
-                'filename' => $filename,
-                'positive' => $metaImage['meta']['prompt'],
-                'negative' => $metaImage['meta']['negativePrompt'],
-                'sampler' => $metaImage['meta']['sampler'],
-                'cfg' => number_format($metaImage['meta']['cfgScale'], 1),
-                'steps' => $metaImage['meta']['steps'],
-                'seed' => $metaImage['meta']['seed'],
-                'initial_size' => $metaImage['meta']['Size'],
-                'source' => 'CivitAI',
-            ]);
-            $image->save();
-            if($counter == 10){
-                break;
-            }
-        }
     }
 }

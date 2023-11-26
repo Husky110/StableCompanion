@@ -58,7 +58,7 @@ class DownloadResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Name')
-                    ->getStateUsing(fn($record) => CivitAIConnector::getModelMetaByID($record->civit_id)['name']),
+                    ->getStateUsing(fn($record) => CivitAIConnector::getModelMetaByID($record->civit_id)['name'].' - '.CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($record->civit_id, $record->version)['name']),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')
                     ->getStateUsing(fn($record) => strtoupper($record->type)),

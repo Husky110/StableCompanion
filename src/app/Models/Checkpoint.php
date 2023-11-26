@@ -2,21 +2,10 @@
 
 namespace App\Models;
 
-use App\Http\Helpers\CivitAIConnector;
-use Closure;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Get;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\HtmlString;
 
 class Checkpoint extends Model
 {
@@ -52,6 +41,71 @@ class Checkpoint extends Model
     }
 
     // Functions
+
+    public function deleteCheckpoint()
+    {
+        if($this->image_name != 'placeholder.png'){
+            Storage::disk('modelimages')->delete($this->image_name);
+        }
+        $this->tags()->sync([]);
+        $this->delete();
+    }
+
+
+    public function setModelImage(array $civitAIModelData) : void
+    {
+        $modelImageDisk = Storage::disk('modelimages');
+        $imageURL = '';
+        $imagename = '';
+        foreach ($civitAIModelData['modelVersions'][0]['images'] as $image){
+            if($image['type'] == 'image'){
+                $imageURL = $image['url'];
+                break;
+            }
+        }
+        if($imageURL){
+            $imagename = basename($imageURL);
+            $modelImageDisk->put($imagename, file_get_contents($imageURL));
+        }
+
+        if($imageURL){
+            $this->image_name = $imagename;
+        }
+        $this->save();
+    }
+
+    public function syncCivitAITags(array $civitAIModelData) : void
+    {
+        $syncArray = [];
+        foreach ($civitAIModelData['tags'] as $civitTag){
+            $tag = Tag::where('tagname', $civitTag)->first();
+            if(!$tag){
+                $tag = new Tag([
+                    'tagname' => $civitTag
+                ]);
+                $tag->save();
+            }
+            $syncArray[] = $tag->id;
+        }
+        $this->tags()->syncWithoutDetaching($syncArray);
+    }
+
+    public static function createNewCheckpointFromCivitAI(array $civitAIModelData, bool $syncTags) : Checkpoint
+    {
+        $checkpoint = new Checkpoint([
+            'checkpoint_name' => $civitAIModelData['name'],
+            'civitai_id' => $civitAIModelData['id'],
+        ]);
+        $checkpoint->setModelImage($civitAIModelData);
+
+        $checkpoint->civit_notes = $civitAIModelData['description'];
+        $checkpoint->save();
+        if($syncTags){
+            $checkpoint->syncCivitAITags($civitAIModelData);
+        }
+        return $checkpoint;
+    }
+
     public static function scanCheckpointFolderForNewFiles()
     {
         $disk = Storage::disk('checkpoints');
@@ -76,179 +130,5 @@ class Checkpoint extends Model
                 $newCheckpointFile->save();
             }
         }
-    }
-
-    public function deleteCheckpoint()
-    {
-        if($this->image_name != 'placeholder.png'){
-            Storage::disk('modelimages')->delete($this->image_name);
-        }
-        $this->tags()->sync([]);
-        $this->delete();
-    }
-
-    private static function buildURLStep() : Wizard\Step
-    {
-        return Wizard\Step::make('URL')
-            ->description('Get the CivitAI-URL')
-            ->schema([
-                TextInput::make('url')
-                    ->label('CivitAI-URL')
-                    ->url()
-                    ->required()
-                    ->rule(fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                        $modelID = CivitAIConnector::extractModelIDFromCivitAIURL($value);
-                        if($modelID === false){
-                            $fail('Non CivitAI-URL or general invalid URL');
-                        }
-                        if(CivitAIConnector::getModelTypeByModelID($modelID) != 'Checkpoint'){
-                            $fail('The given URL does not represent a checkpoint');
-                        }
-                    })
-            ])->afterValidation(function ($get, $set){
-                $modelID = CivitAIConnector::extractModelIDFromCivitAIURL($get('url'));
-                $set('versions', json_encode(CivitAIConnector::getModelVersionsByModelID($modelID), JSON_UNESCAPED_UNICODE));
-                $set('modelID', $modelID);
-                $set('checkpoint_name', CivitAIConnector::getModelMetaByID($modelID)['name']);
-            });
-    }
-
-    private static function buildVersionSelectForDownloadWizardStep() : Wizard\Step
-    {
-        return Wizard\Step::make('Selection')
-            ->description('Details and Download')
-            ->schema([
-                Hidden::make('modelID'),
-                Hidden::make('versions')->live(),
-                TextInput::make('checkpoint_name')
-                    ->label('Checkpoint')
-                    ->live()
-                    ->disabled(),
-                Select::make('version')
-                    ->label('Select Version')
-                    ->options(function ($get){
-                        return json_decode($get('versions'), true);
-                    })
-                    ->required()
-                    ->hint('Sorting is newest to oldest.'),
-                Toggle::make('sync_tags')
-                    ->label('Sync tags from CivitAI')
-                    ->hint('Synchronizes the tags from CivitAI with the checkpoint.')
-                    ->default(true),
-                Toggle::make('sync_examples')
-                    ->label('Download example-images')
-                    ->default(true)
-                    ->hint('The CivitAI-API provides up to 10 images. We sync only images and only those that have complete informations.'),
-            ]);
-    }
-
-    private static function buildCheckpointFileVersionLinkingStep(Checkpoint $oldCheckpoint)
-    {
-        return Wizard\Step::make('Versions')
-            ->description('Link exisiting files')
-            ->schema(function () use ($oldCheckpoint){
-                $retval = [
-                    Hidden::make('modelID'),
-                    Hidden::make('versions')->live(),
-                ];
-                foreach ($oldCheckpoint->files as $checkpointfile){
-                    $retval[] =
-                        Section::make(basename($checkpointfile->filepath))
-                            ->schema([
-                                Select::make('files.'.$checkpointfile->id.'.version')
-                                    ->label('Select Version')
-                                    ->options(function ($get){
-                                        $knownVersions = json_decode($get('versions'), true);
-                                        $knownVersions['custom'] = 'Old / Custom version';
-                                        return $knownVersions;
-                                    })
-                                    ->required()
-                                    ->hint('Sorting is newest to oldest.'),
-                                Toggle::make('files.'.$checkpointfile->id.'.sync_examples')
-                                    ->label('Download example-images')
-                                    ->default(true)
-                                    ->hint('The CivitAI-API provides up to 10 images. We sync only images and only those that have complete informations.'),
-                            ]);
-                }
-                return $retval;
-            });
-    }
-
-    public static function buildCivitAIDownloadWizard() : Wizard
-    {
-        return Wizard::make([
-            self::buildURLStep(),
-            self::buildVersionSelectForDownloadWizardStep()
-        ])->submitAction(new HtmlString(Blade::render(<<<BLADE
-                        <x-filament::button
-                            type="submit"
-                            size="sm"
-                        >
-                            Submit
-                        </x-filament::button>
-        BLADE)));
-    }
-
-    public static function buildCivitAILinkingWizard(Checkpoint $oldCheckpoint): Wizard
-    {
-        return Wizard::make([
-            self::buildURLStep(),
-            self::buildCheckpointFileVersionLinkingStep($oldCheckpoint),
-            Wizard\Step::make('Closure')
-                ->description('Manage Duplicates')
-                ->schema([
-                    Toggle::make('remove_duplicates')
-                        ->label('Delete duplicates')
-                        ->hint('Weither to keep duplicates or delete them - also applies to your previous selection (except custom versions), so doublecheck! If active, StableCompanion will keep the already existing file and delete this one.')
-                ])
-        ])->submitAction(new HtmlString(Blade::render(<<<BLADE
-                        <x-filament::button
-                            type="submit"
-                            size="sm"
-                        >
-                            Submit
-                        </x-filament::button>
-        BLADE)));
-    }
-
-    public static function createNewCheckpointFromCivitAI(array $civitAIModelData, bool $syncTags) : Checkpoint
-    {
-        $modelImageDisk = Storage::disk('modelimages');
-        $imageURL = '';
-        $imagename = '';
-        foreach ($civitAIModelData['modelVersions'][0]['images'] as $image){
-            if($image['type'] == 'image'){
-                $imageURL = $image['url'];
-                break;
-            }
-        }
-        if($imageURL){
-            $imagename = basename($imageURL);
-            $modelImageDisk->put($imagename, file_get_contents($imageURL));
-        }
-        $checkpoint = new Checkpoint([
-            'checkpoint_name' => $civitAIModelData['name'],
-            'civitai_id' => $civitAIModelData['id'],
-        ]);
-        if($imageURL){
-            $checkpoint->image_name = $imagename;
-        }
-        $checkpoint->civit_notes = $civitAIModelData['description'];
-        $checkpoint->save();
-        if($syncTags){
-            $syncArray = [];
-            foreach ($civitAIModelData['tags'] as $civitTag){
-                $tag = Tag::where('tagname', $civitTag)->first();
-                if(!$tag){
-                    $tag = new Tag([
-                        'tagname' => $civitTag
-                    ]);
-                    $tag->save();
-                }
-                $syncArray[] = $tag->id;
-            }
-            $checkpoint->tags()->syncWithoutDetaching($syncArray);
-        }
-        return $checkpoint;
     }
 }

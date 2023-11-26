@@ -96,4 +96,9 @@ class CivitAIConnector
         return [];
     }
 
+    public static function buildCivitAILinkByModelAndVersionID(string $modelID, string $versionID = '') : string
+    {
+        return 'https://civitai.com/models/'.$modelID.($versionID == '' ? $versionID : '?modelVersionId='.$versionID);
+    }
+
 }

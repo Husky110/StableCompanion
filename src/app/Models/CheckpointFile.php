@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Helpers\CivitAIConnector;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -31,6 +32,48 @@ class CheckpointFile extends Model
     }
 
     // Functions
+
+    public function loadImagesFromCivitAIForThisFile() : void
+    {
+        if($this->civitai_version == null || $this->checkpoint->civitai_id == null || $this->civitai_version == 'custom'){
+            return;
+        }
+        $meta = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($this->checkpoint->civitai_id, $this->civitai_version);
+        $counter = 0;
+        foreach ($meta['images'] as $metaImage){
+            if(
+                $metaImage['type'] != 'image' ||
+                isset($metaImage['meta']['prompt']) == false ||
+                isset($metaImage['meta']['negativePrompt']) == false ||
+                isset($metaImage['meta']['sampler']) == false ||
+                isset($metaImage['meta']['cfgScale']) == false ||
+                isset($metaImage['meta']['steps']) == false ||
+                isset($metaImage['meta']['seed']) == false ||
+                isset($metaImage['meta']['Size']) == false
+            ){
+                continue;
+            }
+            $counter++;
+            $filename = $this->checkpoint->civitai_id.'_'.$this->civitai_version.'_'.$this->id.'_'.basename($metaImage['url']);
+            Storage::disk('ai_images')->put($filename, file_get_contents($metaImage['url']));
+            $image = new AIImage([
+                'checkpoint_file_id' => $this->id,
+                'filename' => $filename,
+                'positive' => $metaImage['meta']['prompt'],
+                'negative' => $metaImage['meta']['negativePrompt'],
+                'sampler' => $metaImage['meta']['sampler'],
+                'cfg' => number_format($metaImage['meta']['cfgScale'], 1),
+                'steps' => $metaImage['meta']['steps'],
+                'seed' => $metaImage['meta']['seed'],
+                'initial_size' => $metaImage['meta']['Size'],
+                'source' => 'CivitAI',
+            ]);
+            $image->save();
+            if($counter == 10){
+                break;
+            }
+        }
+    }
 
     private function deleteAllAIImages()
     {

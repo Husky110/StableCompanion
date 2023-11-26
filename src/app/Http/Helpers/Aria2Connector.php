@@ -18,15 +18,13 @@ class Aria2Connector
 
     public static function sendDownloadToAria2(CivitDownload $download)
     {
-        if(CivitDownload::where('status', 'active')->count() == 0){
+        if(CivitDownload::where('status', 'active')->count() < 5){
             $aria2Result = self::getInstance()->addUri([$download->url], ['dir' => '/download_tmp']);
             $download->aria_id = $aria2Result['result'];
             $download->save();
+        } else {
+            $download->status = 'pending';
+            $download->save();
         }
-    }
-
-    public static function sendNextDownloadToAria2()
-    {
-
     }
 }
