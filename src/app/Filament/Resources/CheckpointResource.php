@@ -42,8 +42,8 @@ class CheckpointResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->getStateUsing(function ($record){
-                        if(strlen($record->checkpoint_name) > 25){
-                            return substr($record->checkpoint_name, 0, 25).'...';
+                        if(strlen($record->checkpoint_name) > 20){
+                            return substr($record->checkpoint_name, 0, 20).'...';
                         } else {
                             return $record->checkpoint_name;
                         }
@@ -73,7 +73,7 @@ class CheckpointResource extends Resource
                         foreach ($record->tags->sortBy('tagname') as $tag){
                             $count++;
                             $tagNames .= $tag->tagname.', ';
-                            if($count == 5){
+                            if($count == 4){
                                 $tagNames.= '<br>';
                                 $count = 0;
                             }
