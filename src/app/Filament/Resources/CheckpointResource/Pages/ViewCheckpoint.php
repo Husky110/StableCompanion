@@ -377,7 +377,7 @@ class ViewCheckpoint extends ViewRecord
                                     Section::make('CivitAI-Description')
                                         ->schema([
                                             TextEntry::make('civit_notes')
-                                                ->getStateUsing(fn() => $checkpointFile->civitai_description ? '<div style="word-break: break-word">'.new HtmlString($checkpointFile->civitai_description).'</div>' : 'No additional informations given.')
+                                                ->getStateUsing(fn() => $checkpointFile->civitai_description ? new HtmlString('<div style="word-break: break-word">'.$checkpointFile->civitai_description.'</div>') : 'No additional informations given.')
                                                 ->extraAttributes(['style' => 'max-height: 200px; overflow-y: scroll;'])
                                                 ->label(false)
                                         ])->visible((bool)$this->record->civitai_id),
