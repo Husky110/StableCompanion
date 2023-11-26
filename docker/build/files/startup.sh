@@ -7,6 +7,7 @@ composer update
 if [ ! -f "/var/www/.env" ]; then
   cp .env.example .env
   php artisan key:generate
+  echo "APP_URL="$URL >> .env
 fi
 php artisan migrate --force
 php artisan stablecompanion:clear-civitaicache
