@@ -1,6 +1,6 @@
-# StableCompanion
+# StableCompanion (SC)
 
-##IMPORTANT: This project is still "work in progress"! Do not use it for now, as there will be unannounced changes in everything! Much of the stuff in this readme-file is for future versions!
+## IMPORTANT: This project is still "work in progress"! Do not use it for now, as there will be unannounced changes in everything! Much of the stuff in this readme-file is for future versions!
 
 ## About
 StableCompanion is a side-software meant to accompany an already installed instance of A1111s-WebUI.
@@ -10,7 +10,7 @@ Plus - there is no good extension there for model-, LoRA- or Embedding-managemen
 cluttered with all those cool models where I have no clue on how to use them properly. Yes - there are docs, but who can memorize those?   
 
 ## Important premise
-I've build StableCompanion for myself. It has no intention to specifically fit your usecases, but mine. But hopefully you find it usefull aswell. :)  
+I've build StableCompanion for myself as part of my "recreational programming". It has no intention to specifically fit your usecases, but mine. Hopefully you find it usefull aswell. :)  
 And before someone asks "Why a side-software written in PHP? Couldn't you just wrote a normal A1111-Extension like any normal person out there?" - Well..
 I could... But that would imply to learn Python and stuff, which I don't have the time right now. But I know PHP, I know Laravel and how to do stuff with it. 
 So take it, or leave it. :)  
@@ -45,8 +45,8 @@ Plus - technically you can use StableCompanion to also manage your models for Co
   5. run `docker-compose up -d` inside the docker-directory and go to http://localhost:7861
 ### Usage
   There are some "rules" you should follow when using StableCompanion. Here they are:
-- Do NOT rename files within the checkpoints-, loras- or embedding-directory! StableCompanion will detect them as "new" files which will lead to duplicates in the database!
-- StableCompanion does create the folders "sd" and "xl" inside your checkpoint-, lora- and embedding-volume. This is done to provide a file-separation for regular models and Xl-stuff. 
+- Do NOT rename files within the checkpoints-, loras- or embedding-directory (that also includes changing file-extensions)! StableCompanion will detect them as "new" files which will lead to duplicates in the database!
+- StableCompanion does create the folders "sd" and "xl" inside your checkpoint-, lora- and embedding-volumes. This is done to provide a file-separation for regular models and Xl-stuff. 
 - When you import a checkpoint, lora, or embedding from CivitAI - StableCompanion will put the CivitAI-ID and -versionID in front of the filename. This is so that a new import or update does not accidentally overwrites an existing file if the model-maintainer keeps using repetitive filenames.
 - Within each folder (checkpoints, loras, embeddings) you can create a directory with the name "no_scan" - StableCompanion scans your files recursively, but EXPLICITLY ignore that directory. In there you can put all your files that are still in training or should not be used by StableCompanion at all.
 - All requests against the CivitAI-API are beeing cached for one hour or until the container is restarted. I just try to play nice here - so please follow suit. If you wanna look for updates - there are buttons for that you can hit once every hour.
@@ -63,5 +63,6 @@ Since there are no "Frequently asked questions" yet I'm doing a "Possible asked 
 - Will you support downloads from Huggingface or somewhere else aswell? -> Not for now. If you have something from Huggingface or somewhere else, I would recommend to just download the file and put it wherever it belongs on your filesystem.
 
 ## Legal and stuff
-I'm releasing StableCompanion "as is" and I take no responsibility of what you are doing with it. Please follow your local laws and respect the terms of the models and files you are downloading and managing.  
-Under no circumstances are you allowed to redistribute StableCompanion
+I'm releasing StableCompanion "as is" and take no responsibility of what you are doing with it. Please follow your local laws and respect the terms of the models and files you are downloading and managing.  
+Under no circumstances are you allowed to redistribute StableCompanion in any context!  
+If you use SC or parts of it for your own project/software/what-not: Just drop a link to this repo and my Github-Profile in there for people to find.
