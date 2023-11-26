@@ -27,7 +27,7 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 </figure>
 <figure class="image">
 <figcaption>CivitAI-Example-Image with checkpointfile in background:</figcaption>
-  <img src="readme/screen2.png">
+  <img src="readme/screen3.png">
 </figure>
 
 ## Working Features
