@@ -75,7 +75,7 @@ Since there are no "Frequently asked questions" yet I'm doing a "Possible asked 
 
 ## Troubleshooting
 ### Help - all Image-Files seem to be broken!
-Are you sure you set the URL within the docker-compose.yml correctly? Nope? Happened to me aswell. :)
+Are you sure you set the URL within the docker-compose.yml correctly? Nope? Happened to me aswell. :) Just correct it and run SC again.
 
 ## Legal and stuff
 I'm releasing StableCompanion "as is" and take no responsibility of what you are doing with it. Please follow your local laws and respect the terms of the models and files you are downloading and managing.  
