@@ -31,7 +31,7 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 
 ## Setup
 ### Prerequisites
-- OS: Does not matter
+- OS: Does not matter (I am running and testing SC on Ubuntu 22.04.)
 - installed Docker-Engine (https://docs.docker.com/engine/install/) and docker compose (note: docker compose can be installed on Windows aswell -> see https://www.ionos.com/digitalguide/server/configuration/install-docker-compose-on-windows/)
 - Requirements for later on (right now, they are not needed, but they will be in the future!)
   - Installed and running instance of A1111-WebUI with the following parameters:
