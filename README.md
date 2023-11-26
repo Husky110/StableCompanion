@@ -1,13 +1,13 @@
 # StableCompanion (SC)
 
-## IMPORTANT: This project is still "work in progress"! 
+## IMPORTANT: This project is still "work in progress"!
 
 ## About
 StableCompanion is a side-software meant to accompany an already installed instance of A1111s-WebUI.
 It was build out of the problem that there are maaaaany extensions out there, but none of them did quite what I wanted in some cases.
 For example: There is no good (as in "easy") extension or script to test one prompt against all installed models.  
 Plus - there is no good extension there for model-, LoRA- or Embedding-management. So my harddrive becomes 
-cluttered with all those cool models where I have no clue on how to use them properly. Yes - there are docs, but who can memorize those?   
+cluttered with all those cool models where I have no clue on how to use them properly. Yes - there are docs, but who can memorize those?
 
 ## Important premise
 I've build StableCompanion for myself as part of my "recreational programming". It has no intention to specifically fit your usecases, but mine. Hopefully you find it usefull aswell. :)  
@@ -15,6 +15,16 @@ And before someone asks "Why a side-software written in PHP? Couldn't you just w
 I could... But that would imply to learn Python and stuff, which I don't have the time right now. But I know PHP, I know Laravel and how to do stuff with it. 
 So take it, or leave it. :)  
 Plus - technically you can use StableCompanion to also manage your models for ComfyUI, InvokeAI and whatnot. The toolbox will only depend on A1111.
+
+## Some Screenshots
+<p>
+<img src="readme/screen1.png" alt="drawing" width="400"/>
+<em>Overview of checkpoints</em>
+</p>
+<p>
+<img src="readme/screen2.png" alt="drawing" width="400"/>
+<em>Detailview of a checkpoint</em>
+</p>
 
 ## Working Features
 ### Checkpoints
