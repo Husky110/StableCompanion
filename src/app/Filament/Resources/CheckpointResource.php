@@ -5,14 +5,11 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CheckpointResource\Pages;
 use App\Filament\Resources\CheckpointResource\RelationManagers;
 use App\Models\Checkpoint;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class CheckpointResource extends Resource
@@ -92,10 +89,22 @@ class CheckpointResource extends Resource
                     ->multiple()
                     ->relationship('tags', 'tagname')
                     ->preload(),
+                Tables\Filters\TernaryFilter::make('modeltype')
+                    ->placeholder('All')
+                    ->trueLabel('SD-Models')
+                    ->falseLabel('XL-Models')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereHas('files', fn($query) => $query->whereNot('baseModel', 'like', '%XL%')),
+                        false: fn (Builder $query) => $query->whereHas('files', fn($query) => $query->where('baseModel', 'like', '%XL%')),
+                        blank: fn (Builder $query) => $query,
+                    ),
+                Tables\Filters\Filter::make('only_unliked')
+                    ->label('Only unliked models')
+                    ->query(fn($query) => $query->whereNull('civitai_id')),
                 Tables\Filters\Filter::make('only_downloading')
                     ->label('Only downloading')
                     ->toggle()
-                    ->query(fn($query) => $query->has('activedownloads'))
+                    ->query(fn($query) => $query->has('activedownloads')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make('view')
