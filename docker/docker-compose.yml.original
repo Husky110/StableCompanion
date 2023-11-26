@@ -1,4 +1,5 @@
 version: "3"
+name: "StableCompanion"
 services:
   stable_companion:
     container_name: "companion_frontend"
