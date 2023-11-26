@@ -73,6 +73,10 @@ Since there are no "Frequently asked questions" yet I'm doing a "Possible asked 
 - Whenever I import something from CivitAI, the number of downloads in the left menu does not go up. Why? -> That is one of the weak points of Filament. AFAIK there is no solution to that right now.
 - Will you support downloads from Huggingface or somewhere else aswell? -> Not for now. If you have something from Huggingface or somewhere else, I would recommend to just download the file and put it wherever it belongs on your filesystem.
 
+## Troubleshooting
+### Help - all Image-Files seem to be broken!
+Are you sure you set the URL within the docker-compose.yml correctly? Nope? Happened to me aswell. :)
+
 ## Legal and stuff
 I'm releasing StableCompanion "as is" and take no responsibility of what you are doing with it. Please follow your local laws and respect the terms of the models and files you are downloading and managing.  
 Under no circumstances are you allowed to redistribute StableCompanion in any context!  
