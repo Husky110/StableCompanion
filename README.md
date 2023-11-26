@@ -71,8 +71,9 @@ Since there are no "Frequently asked questions" yet I'm doing a "Possible asked 
 - Is there a way to import a specific image from CivitAI? -> Unfortunately the CivitAI-API is borked when it comes to this and so far no one was able to tell me how that should work. I get empty results when I try `https://civitai.com/api/v1/images?postId=123`
 - Can I import all the images of a checkpoint/lora/embedding? -> Nope. StableCompanion relies on the CivitAI-API and that gives me only 10 images max. Plus - see above.
 - Will you optimize this for mobile-devices? -> Well - I will not. If you really need that, feel encouraged to make a PR. :)
-- Whenever I import something from CivitAI, the number of downloads in the left menu does not go up. Why? -> That is one of the weak points of Filament. AFAIK there is no solution to that right now.
+- Whenever I import something from CivitAI, the number of downloads in the left menu does not go up. Actually - it does not change at all until I reload or change the page! Why? -> That is one of the weak points of Filament. AFAIK there is no solution to that right now.
 - Will you support downloads from Huggingface or somewhere else aswell? -> Not for now. If you have something from Huggingface or somewhere else, I would recommend to just download the file and put it wherever it belongs on your filesystem.
+- When will feature XYZ be done? -> Well - I do this project just-for-fun and recreation. I still have a family, a job and a life to look after - so I only work on this when I have time.
 
 ## Troubleshooting
 ### Help - all Image-Files seem to be broken!
