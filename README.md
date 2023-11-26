@@ -17,14 +17,14 @@ So take it, or leave it. :)
 Plus - technically you can use StableCompanion to also manage your models for ComfyUI, InvokeAI and whatnot. The toolbox will only depend on A1111.
 
 ## Some Screenshots
-<p>
-<img src="readme/screen1.png" alt="drawing" width="400"/>
-<em>Overview of checkpoints</em>
-</p>
-<p>
-<img src="readme/screen2.png" alt="drawing" width="400"/>
-<em>Detailview of a checkpoint</em>
-</p>
+<figure class="image">
+  <img src="readme/screen1.png">
+  <figcaption>Overview of checkpoints</figcaption>
+</figure>
+<figure class="image">
+  <img src="readme/screen2.png">
+  <figcaption>Detailview of a checkpoint</figcaption>
+</figure>
 
 ## Working Features
 ### Checkpoints
