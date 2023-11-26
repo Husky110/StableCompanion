@@ -18,12 +18,12 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 
 ## Some Screenshots
 <figure class="image">
+<figcaption>Overview of checkpoints:</figcaption>
   <img src="readme/screen1.png">
-  <figcaption>Overview of checkpoints</figcaption>
 </figure>
 <figure class="image">
+<figcaption>Detailview of a checkpoint:</figcaption>
   <img src="readme/screen2.png">
-  <figcaption>Detailview of a checkpoint</figcaption>
 </figure>
 
 ## Working Features
