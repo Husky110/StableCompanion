@@ -40,7 +40,15 @@ class CheckpointResource extends Resource
                 Tables\Columns\TextColumn::make('checkpoint_name')
                     ->label('Name')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->getStateUsing(function ($record){
+                        if(strlen($record->checkpoint_name) > 40){
+                            return substr($record->checkpoint_name).'...';
+                        } else {
+                            return $record->checkpoint_name;
+                        }
+                    })
+                    ->tooltip(fn($record) => $record->checkpoint_name),
                 Tables\Columns\TextColumn::make('checkpoint_baseModel')
                     ->label('Base Models')
                     ->getStateUsing(function ($record){
