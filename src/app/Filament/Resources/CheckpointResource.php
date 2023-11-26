@@ -41,11 +41,42 @@ class CheckpointResource extends Resource
                     ->label('Name')
                     ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('checkpoint_baseModel')
+                    ->label('Base Models')
+                    ->getStateUsing(function ($record){
+                       $bases = [];
+                       foreach ($record->files as $file){
+                           if(!in_array($file->baseModel, $bases)){
+                               $bases[] = $file->baseModel;
+                           }
+                       }
+                       return implode(', ', $bases);
+                    }),
                 Tables\Columns\TextColumn::make('files')
                     ->label('Files')
                     ->getStateUsing(function ($record){
                         return new HtmlString('Imported Versions: '.$record->files()->count().'<br>Downloads:'.$record->activedownloads()->count());
                     }),
+                Tables\Columns\TextColumn::make('tags.tagname')
+                    ->label('Tags')
+                    ->getStateUsing(function ($record){
+                        $tagNames = '';
+                        $count = 0;
+                        foreach ($record->tags->sortBy('tagname') as $tag){
+                            $count++;
+                            $tagNames .= $tag->tagname.', ';
+                            if($count == 5){
+                                $tagNames.= '<br>';
+                                $count = 0;
+                            }
+                        }
+                        if(str_ends_with($tagNames, '<br>')){
+                            $tagNames = substr($tagNames, 0, -6);
+                        } else {
+                            $tagNames = substr($tagNames, 0, -2);
+                        }
+                        return new HtmlString($tagNames);
+                    })
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('tags')
@@ -59,6 +90,8 @@ class CheckpointResource extends Resource
                     ->query(fn($query) => $query->has('activedownloads'))
             ])
             ->actions([
+                Tables\Actions\ViewAction::make('view')
+                    ->button(),
                 Tables\Actions\DeleteAction::make('delete')
                     ->button()
                     ->action(function ($record){
