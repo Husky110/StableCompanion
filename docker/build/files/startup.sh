@@ -8,7 +8,7 @@ if [ ! -f "/var/www/.env" ]; then
   cp .env.example .env
   php artisan key:generate
 fi
-php artisan migrate
+php artisan migrate --force
 php artisan stablecompanion:clear-civitaicache
 php artisan stablecompanion:scan-for-files
 sleep 10s
