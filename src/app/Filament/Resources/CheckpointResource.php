@@ -99,7 +99,8 @@ class CheckpointResource extends Resource
                         blank: fn (Builder $query) => $query,
                     ),
                 Tables\Filters\Filter::make('only_unliked')
-                    ->label('Only unliked models')
+                    ->label('Only unlinked models')
+                    ->toggle()
                     ->query(fn($query) => $query->whereNull('civitai_id')),
                 Tables\Filters\Filter::make('only_downloading')
                     ->label('Only downloading')
