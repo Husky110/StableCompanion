@@ -17,3 +17,6 @@ use Illuminate\Support\Facades\Route;
 //    return view('welcome');
 //});
 
+if(file_exists(__DIR__.'/debugroutes.php')){
+    require_once __DIR__.'/debugroutes.php';
+}
