@@ -174,9 +174,9 @@ class ListCheckpoints extends ListRecords
                 ->action(function($data){
                     if(isset($data['updates'])){
                         foreach ($data['updates'] as $checkPointID => $updateSettings){
+                            $checkpoint = Checkpoint::with(['files'])->findOrFail($checkPointID);
                             if($updateSettings['mode']){
                                 // delete all previous Versions!
-                                $checkpoint = Checkpoint::with(['files'])->findOrFail($checkPointID);
                                 foreach ($checkpoint->files as $checkpointFile){
                                     $checkpointFile->deleteCheckpointFile();
                                 }
