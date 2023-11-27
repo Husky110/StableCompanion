@@ -17,7 +17,8 @@ class CheckpointFile extends Model
         'filepath',
         'civitai_version',
         'civitai_description',
-        'baseModel'
+        'baseModel',
+        'trained_words'
     ];
 
     // Relations

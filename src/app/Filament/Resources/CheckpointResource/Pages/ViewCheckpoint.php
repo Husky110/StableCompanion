@@ -333,6 +333,11 @@ class ViewCheckpoint extends ViewRecord
                                                 ->inlineLabel()
                                                 ->getStateUsing($checkpointFile->civitai_version ? new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($this->record->civitai_id, $checkpointFile->civitai_version).'" target="_blank">'.$checkpointFile->civitai_version.'</a>') : '')
                                                 ->visible((bool)$checkpointFile->civitai_version),
+                                            TextEntry::make('trained_words')
+                                                ->label('Trained words:')
+                                                ->inlineLabel()
+                                                ->getStateUsing(fn($record) => $record->trained_words ? implode(', ', json_decode($record->trained_words, true)) : '')
+                                                ->visible(fn($record) => (bool)$record->trained_words),
                                             \Filament\Infolists\Components\Actions::make([
                                                 Action::make('rename_checkpointfile')
                                                     ->label('Change Filename')

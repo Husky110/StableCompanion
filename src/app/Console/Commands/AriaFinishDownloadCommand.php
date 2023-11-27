@@ -103,7 +103,8 @@ class AriaFinishDownloadCommand extends Command
             'filepath' => $filepath,
             'civitai_version' => $download->version,
             'civitai_description' => $metaData['description'],
-            'baseModel' => $metaData['baseModel']
+            'baseModel' => $metaData['baseModel'],
+            'trained_words' => isset($metaData['trainedWords']) ? json_encode($metaData['trainedWords'], JSON_UNESCAPED_UNICODE) : null,
         ]);
         $checkpointFile->save();
         return $checkpointFile;
