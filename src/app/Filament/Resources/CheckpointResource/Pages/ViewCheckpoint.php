@@ -251,7 +251,14 @@ class ViewCheckpoint extends ViewRecord
                             ->label(false)
                             ->disk('ai_images')
                             ->getStateUsing($aiImage->filename)
-                            ->columnSpan(1)
+                            ->columnSpan(function () use ($aiImage){
+                                $dimensions = explode('x',$aiImage->initial_size);
+                                if($dimensions[0] > $dimensions[1]){
+                                    return 2;
+                                } else {
+                                    return 1;
+                                }
+                            })
                             ->action(
                                 Action::make('view')
                                     ->modalHeading($aiImage->filename)
