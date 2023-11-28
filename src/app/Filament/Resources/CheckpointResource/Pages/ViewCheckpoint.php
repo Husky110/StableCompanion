@@ -4,19 +4,20 @@ namespace App\Filament\Resources\CheckpointResource\Pages;
 
 use App\Filament\Resources\CheckpointResource;
 use App\Filament\Resources\CheckpointResource\Helpers\CheckpointFilamentHelper;
+use App\Filament\Resources\CheckpointResource\Helpers\GeneralFrontendHelper;
 use App\Http\Helpers\CivitAIConnector;
 use App\Models\Checkpoint;
 use App\Models\CheckpointFile;
+use App\Models\CivitDownload;
+use App\Models\DataStructures\CivitAIModelType;
 use Filament\Actions;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\ViewField;
+use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
@@ -76,7 +77,7 @@ class ViewCheckpoint extends ViewRecord
                                         continue;
                                     }
                                     if($linkingData['version'] == $existingFile->version){
-                                        $existingFile->deleteCheckpointFile();
+                                        $existingFile->deleteModelFile();
                                         unset($data['files'][$linkingCheckpointFileID]);
                                         break;
                                     }
@@ -112,7 +113,32 @@ class ViewCheckpoint extends ViewRecord
 
                 })
                 ->modalSubmitAction(false)
-                ->modalCancelAction(false)
+                ->modalCancelAction(false),
+            Actions\Action::make('download_additional_versions')
+                ->label('Download additional versions')
+                ->button()
+                ->modalDescription('With this you can add other/older versions of this model to your collection.')
+                ->form(function ($record){
+                    return [
+                        Select::make('versions')
+                            ->label('Pick your versions')
+                            ->multiple()
+                            ->options($record->checkIfOtherVersionsExistOnCivitAi()),
+                        Toggle::make('sync_images')
+                            ->label('Sync example-images'),
+                    ];
+                })
+                ->action(function ($data){
+                    foreach ($data['versions'] as $version){
+                        CivitDownload::downloadFileFromCivitAI(
+                          CivitAIModelType::CHECKPOINT,
+                            $this->record->civitai_id,
+                            $version,
+                            $data['sync_images']
+                        );
+                    }
+                })
+                ->visible(fn($record) => count($record->checkIfOtherVersionsExistOnCivitAi()) > 0)
         ];
     }
 
@@ -204,7 +230,7 @@ class ViewCheckpoint extends ViewRecord
                                     Section::make('Your Notes')
                                         ->schema([
                                             TextEntry::make('user_notes')
-                                                ->getStateUsing(fn() => new HtmlString($this->record->user_notes ?? 'You noted nothing so far...'))
+                                                ->getStateUsing(fn() => $this->record->user_notes ? GeneralFrontendHelper::wrapHTMLStringToImplementBreaks($this->record->user_notes) : 'You noted nothing so far...')
                                                 ->label(false),
                                             \Filament\Infolists\Components\Actions::make([
                                                 Action::make('change_usernotes')
@@ -231,7 +257,7 @@ class ViewCheckpoint extends ViewRecord
                                     Section::make('CivitAI-Description')
                                         ->schema([
                                             TextEntry::make('civit_notes')
-                                                ->getStateUsing(fn() => new HtmlString('<div style="word-break: break-word">'.$this->record->civit_notes.'</div>'))
+                                                ->getStateUsing(fn() => GeneralFrontendHelper::wrapHTMLStringToImplementBreaks($this->record->civit_notes))
                                                 ->extraAttributes(['style' => 'max-height: 200px; overflow-y: scroll;'])
                                                 ->label(false)
                                         ])
@@ -260,54 +286,7 @@ class ViewCheckpoint extends ViewRecord
                                 }
                             })
                             ->action(
-                                Action::make('view')
-                                    ->modalHeading($aiImage->filename)
-                                    ->form([
-                                        Grid::make(3)
-                                            ->schema([
-                                                ViewField::make('image')
-                                                    ->columnSpan(1)
-                                                    ->view('filament.showImage')
-                                                    ->viewData(['src' => '/ai_images/'.$aiImage->filename]),
-                                                \Filament\Forms\Components\Section::make('Metadata')
-                                                    ->columnSpan(2)
-                                                    ->columns()
-                                                    ->schema([
-                                                        Textarea::make($aiImage->id.'_positive')
-                                                            ->default($aiImage->positive)
-                                                            ->autosize()
-                                                            ->label('Positive Prompt')
-                                                            ->disabled(),
-                                                        Textarea::make($aiImage->id.'_negative')
-                                                            ->default($aiImage->negative)
-                                                            ->autosize()
-                                                            ->label('Negative Prompt')
-                                                            ->disabled(),
-                                                        TextInput::make($aiImage->id.'_sampler')
-                                                            ->default($aiImage->sampler)
-                                                            ->label('Sampler')
-                                                            ->disabled(),
-                                                        TextInput::make($aiImage->id.'_cfg')
-                                                            ->default($aiImage->cfg)
-                                                            ->label('CFG-Scale')
-                                                            ->disabled(),
-                                                        TextInput::make($aiImage->id.'_steps')
-                                                            ->default($aiImage->steps)
-                                                            ->label('Steps')
-                                                            ->disabled(),
-                                                        TextInput::make($aiImage->id.'_seed')
-                                                            ->default($aiImage->seed)
-                                                            ->label('Seed')
-                                                            ->disabled(),
-                                                        TextInput::make($aiImage->id.'_initial_size')
-                                                            ->default($aiImage->initial_size)
-                                                            ->label('Initial Size')
-                                                            ->disabled(),
-                                                    ])
-                                            ])
-                                    ])
-                                    ->modalSubmitAction(false)
-                                    ->modalCancelAction(false)
+                                GeneralFrontendHelper::buildExampleImageViewAction($aiImage),
                             );
                     }
                     $retval[] = Section::make(basename($checkpointFile->filepath))
@@ -376,20 +355,24 @@ class ViewCheckpoint extends ViewRecord
                                                     ->action(function ($data){
                                                         $checkpointFile = CheckpointFile::with(['images'])->findOrFail($data['checkpoint_file_id']);
                                                         $checkpointID = $checkpointFile->checkpoint_id;
-                                                        $checkpointFile->deleteCheckpointFile();
+                                                        $checkpointFile->deleteModelFile();
                                                         $checkpoint = Checkpoint::with(['files'])->findOrFail($checkpointID);
                                                         if($checkpoint->files->count() == 0){
-                                                            $checkpoint->deleteCheckpoint();
+                                                            $checkpoint->deleteModel();
                                                         }
 
                                                     })
-                                                    ->after(fn() => $this->redirect(route('filament.admin.resources.checkpoints.index'))),
+                                                    ->after(function (){
+                                                        if($this->record->files->count() == 0){
+                                                            $this->redirect(route('filament.admin.resources.checkpoints.index'));
+                                                        }
+                                                    }),
                                             ])->fullWidth(),
                                         ]),
                                     Section::make('CivitAI-Description')
                                         ->schema([
                                             TextEntry::make('civit_notes')
-                                                ->getStateUsing(fn() => $checkpointFile->civitai_description ? new HtmlString('<div style="word-break: break-word">'.$checkpointFile->civitai_description.'</div>') : 'No additional informations given.')
+                                                ->getStateUsing(fn() => $checkpointFile->civitai_description ? GeneralFrontendHelper::wrapHTMLStringToImplementBreaks($checkpointFile->civitai_description) : 'No additional informations given.')
                                                 ->extraAttributes(['style' => 'max-height: 200px; overflow-y: scroll;'])
                                                 ->label(false)
                                         ])->visible((bool)$this->record->civitai_id),

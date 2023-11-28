@@ -14,7 +14,8 @@ class AIImage extends Model
     public $table = 'ai_images';
 
     public $fillable = [
-        'checkpoint_file_id',
+        'model_file_id',
+        'model_file_class',
         'filename',
         'positive',
         'negative',
@@ -28,8 +29,8 @@ class AIImage extends Model
 
     // Relations
 
-    public function checkpointfile() : BelongsTo
+    public function modelfile() : BelongsTo
     {
-        return $this->belongsTo(CheckpointFile::class);
+        return $this->belongsTo($this->model_file_class, 'model_file_id');
     }
 }

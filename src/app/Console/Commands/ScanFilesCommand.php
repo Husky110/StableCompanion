@@ -26,6 +26,6 @@ class ScanFilesCommand extends Command
      */
     public function handle()
     {
-        Checkpoint::scanCheckpointFolderForNewFiles();
+        Checkpoint::checkModelFolderForNewFiles();
     }
 }

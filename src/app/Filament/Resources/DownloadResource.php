@@ -111,7 +111,7 @@ class DownloadResource extends Resource
                     ->action(function ($record){
                         if($record->existingCheckpoint != null){
                             if($record->existingCheckpoint->files->count() == 0){
-                                $record->existingCheckpoint->deleteCheckpoint();
+                                $record->existingCheckpoint->deleteModel();
                             }
                         }
                         $record->delete();

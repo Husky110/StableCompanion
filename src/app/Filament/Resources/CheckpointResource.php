@@ -114,9 +114,9 @@ class CheckpointResource extends Resource
                     ->button()
                     ->action(function ($record){
                         foreach ($record->files as $checkpointFile){
-                            $checkpointFile->deleteCheckpointFile();
+                            $checkpointFile->deleteModelFile();
                         }
-                        $record->deleteCheckpoint();
+                        $record->deleteModel();
                     })
                     ->modalDescription('Are you sure you want to delete this checkpoint? This will also delete all versions and images! Continue?')
             ])

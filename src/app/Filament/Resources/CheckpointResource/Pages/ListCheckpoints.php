@@ -11,16 +11,10 @@ use App\Models\CivitDownload;
 use App\Models\DataStructures\CivitAIModelType;
 use Filament\Actions;
 use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Blade;
@@ -49,7 +43,7 @@ class ListCheckpoints extends ListRecords
                     $metaData = CivitAIConnector::getModelMetaByID($data['modelID']);
                     $checkpoint = Checkpoint::with(['files', 'activedownloads'])->where('civitai_id', $data['modelID'])->first();
                     if($checkpoint == null){
-                        Checkpoint::createNewCheckpointFromCivitAI($metaData, $data['sync_tags']);
+                        Checkpoint::createNewModelFromCivitAI($metaData, $data['sync_tags']);
                     }
 
                     foreach ($data['download_versions'] as $versionToDownload){
@@ -82,7 +76,7 @@ class ListCheckpoints extends ListRecords
             Actions\Action::make('scan_files')
                 ->label('Scan checkpoint-files')
                 ->button()
-                ->action(fn() => Checkpoint::scanCheckpointFolderForNewFiles()),
+                ->action(fn() => Checkpoint::checkModelFolderForNewFiles()),
             Actions\Action::make('update_civit_models')
                 ->label('Scan for CivitAI-Modelupdates')
                 ->button()
@@ -178,7 +172,7 @@ class ListCheckpoints extends ListRecords
                             if($updateSettings['mode']){
                                 // delete all previous Versions!
                                 foreach ($checkpoint->files as $checkpointFile){
-                                    $checkpointFile->deleteCheckpointFile();
+                                    $checkpointFile->deleteModelFile();
                                 }
                             }
                             CivitDownload::downloadFileFromCivitAI(

@@ -47,21 +47,25 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 ### Prerequisites
 - OS: Does not matter (I am running and testing SC on Ubuntu 22.04.)
 - installed Docker-Engine (https://docs.docker.com/engine/install/) and docker compose (note: docker compose can be installed on Windows aswell -> see https://www.ionos.com/digitalguide/server/configuration/install-docker-compose-on-windows/)
-- Requirements for later on (right now, they are not needed, but they will be in the future!)
-  - Installed and running instance of A1111-WebUI with the following parameters:
-    - `--api` in launch-commands
-    - Following extensions installed:
-      - Adetailer (https://github.com/Bing-su/adetailer)
-      - Regional Prompter (https://github.com/hako-mikan/sd-webui-regional-prompter)
-      - ControlNet (https://github.com/Mikubill/sd-webui-controlnet)
+- Installed and running instance of A1111-WebUI with the following parameters:
+  - `--api` in launch-commands
+  - Following extensions installed (right now, they are not needed, but they will be in the future!):
+    - Adetailer (https://github.com/Bing-su/adetailer)
+    - Regional Prompter (https://github.com/hako-mikan/sd-webui-regional-prompter)
+    - ControlNet (https://github.com/Mikubill/sd-webui-controlnet)
 ### Setup
   1. Clone this repo
   2. Cd into the docker-directory and copy the docker-compose.yml.original to docker-compose.yml
-  3. Modify the newly created docker-compose.yml to your need (should be self-explaining inside the file - if you need help, see https://docs.docker.com/storage/volumes/#use-a-volume-with-docker-compose)
+  3. Modify the newly created docker-compose.yml to your need
+     1. Set the volumes accordingly (should be self-explaining inside the file - if you need help, see https://docs.docker.com/storage/volumes/#use-a-volume-with-docker-compose)
+        - IMPORTANT: DO __NOT__ POINT THIS TO A SYMLINK! If you've symlinked your directories for A1111, please enter the destination-path here and not the symlink! Docker can't work with those! 
+     2. Set the URL accordingly -> if you run A1111 and SC on your local machine, just leave it be. If you are in a network change it to http://<IP OR COMPUTERNAME>:7861
   4. Run `docker compose build` and wait for it to finish.
   5. Run `docker compose up` (if you have the composer-plugin installed, that should work fine aswell) inside the docker-directory and go to http://localhost:7861 - Notice: You can run SC in the background by running `docker compose up -d`, but I recommend running it in foreground on the first start.
   6. The first run might take a bit, since composer has to install all dependencies - just wait a bit until you read `INFO exited: startup (exit status 0; expected)` - Notice: If you read `INFO gave up: startup entered FATAL state, too many start retries too quickly` on start - that's nothing to worry about. The startup-script bites itself a bit with supervisor. As long as php-fpm, nginx and aria are running you are fine. :) 
   7. Fireup A1111-WebUI (if not already up)
+  8. Open SC and visit the Settings-Page
+     1. Set the URL to A1111-WebUi if you are running A1111 on a network-machine. If it runs on your computer, just leave it be.
 
 ### Update
   1. Run `git pull` inside the repo-folder

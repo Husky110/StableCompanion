@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Http\Helpers\CivitAIConnector;
+use App\Models\DataStructures\ModelBaseClass;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
-class Checkpoint extends Model
+class Checkpoint extends ModelBaseClass
 {
     public $timestamps = false;
 
@@ -35,62 +36,26 @@ class Checkpoint extends Model
         return $this->hasMany(CheckpointFile::class);
     }
 
-    public function activedownloads() : HasMany
-    {
-        return $this->hasMany(CivitDownload::class, 'civit_id', 'civitai_id');
-    }
+    // -> activedownloads are here by parentclass
 
     // Functions
 
-    public function deleteCheckpoint()
+    public function checkIfOtherVersionsExistOnCivitAi() : array
     {
-        if($this->image_name != 'placeholder.png'){
-            Storage::disk('modelimages')->delete($this->image_name);
+        if($this->civitai_id == null){
+            return [];
         }
-        $this->tags()->sync([]);
-        $this->delete();
-    }
-
-
-    public function setModelImage(array $civitAIModelData) : void
-    {
-        $modelImageDisk = Storage::disk('modelimages');
-        $imageURL = '';
-        $imagename = '';
-        foreach ($civitAIModelData['modelVersions'][0]['images'] as $image){
-            if($image['type'] == 'image'){
-                $imageURL = $image['url'];
-                break;
+        $metaData = CivitAIConnector::getModelMetaByID($this->civitai_id);
+        $versionsNotInCollection = [];
+        foreach ($metaData['modelVersions'] as $modelVersion){
+            if(CheckpointFile::where('civitai_version', $modelVersion['id'])->count() == 0){
+                $versionsNotInCollection[$modelVersion['id']] = $modelVersion['name'];
             }
         }
-        if($imageURL){
-            $imagename = basename($imageURL);
-            $modelImageDisk->put($imagename, file_get_contents($imageURL));
-        }
-
-        if($imageURL){
-            $this->image_name = $imagename;
-        }
-        $this->save();
+        return $versionsNotInCollection;
     }
 
-    public function syncCivitAITags(array $civitAIModelData) : void
-    {
-        $syncArray = [];
-        foreach ($civitAIModelData['tags'] as $civitTag){
-            $tag = Tag::where('tagname', $civitTag)->first();
-            if(!$tag){
-                $tag = new Tag([
-                    'tagname' => $civitTag
-                ]);
-                $tag->save();
-            }
-            $syncArray[] = $tag->id;
-        }
-        $this->tags()->syncWithoutDetaching($syncArray);
-    }
-
-    public static function createNewCheckpointFromCivitAI(array $civitAIModelData, bool $syncTags) : Checkpoint
+    public static function createNewModelFromCivitAI(array $civitAIModelData, bool $syncTags) : static
     {
         $checkpoint = new Checkpoint([
             'checkpoint_name' => $civitAIModelData['name'],
@@ -106,7 +71,7 @@ class Checkpoint extends Model
         return $checkpoint;
     }
 
-    public static function scanCheckpointFolderForNewFiles()
+    public static function checkModelFolderForNewFiles() : void
     {
         $disk = Storage::disk('checkpoints');
         foreach ($disk->allFiles() as $file){
