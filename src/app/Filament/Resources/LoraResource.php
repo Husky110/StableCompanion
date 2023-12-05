@@ -128,7 +128,9 @@ class LoraResource extends Resource
             ])
             ->bulkActions([
 
-            ]);
+            ])
+            ->poll('60s')
+            ->defaultSort('model_name');
     }
 
     public static function getRelations(): array
