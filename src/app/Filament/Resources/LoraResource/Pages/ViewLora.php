@@ -65,11 +65,11 @@ class ViewLora extends ViewRecord
                 ->visible(!(bool)$this->record->civitai_id)
                 ->form([GeneralFrontendHelper::buildCivitAILinkingWizard($this->record)])
                 ->action(function ($data){
+                    $redirect = 0;
                     $exisitingLora = Lora::where('civitai_id', $data['modelID'])->first();
                     if($exisitingLora){
+                        $redirect = $exisitingLora->id;
                         foreach ($exisitingLora->files as $existingFile){
-                            $existingFile->base_id = $exisitingLora;
-                            $existingFile->civitai_version = $data['files'][$existingFile->id]['version'];
                             if($data['remove_duplicates']){
                                 foreach ($data['files'] as $linkingLoraFileID => $linkingData){
                                     if($linkingData['version'] == 'custom'){
@@ -81,10 +81,18 @@ class ViewLora extends ViewRecord
                                         break;
                                     }
                                 }
-                            } else {
-                                $existingFile->save();
                             }
                         }
+                        foreach ($this->record->files as $oldFile){
+                            $oldFile->base_id = $exisitingLora->id;
+                            $oldFile->civitai_version = $data['files'][$oldFile->id]['version'];
+                            $modelFileSpecificData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($data['modelID'], $oldFile->civitai_version);
+                            $oldFile->civitai_description = $modelFileSpecificData['description'];
+                            $oldFile->baseModelType = $modelFileSpecificData['baseModel'];
+                            $oldFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
+                            $oldFile->save();
+                        }
+                        $this->record->deleteModel();
                     } else {
                         $modelData = CivitAIConnector::getModelMetaByID($data['modelID']);
                         $this->record->model_name = $modelData['name'];
@@ -112,7 +120,9 @@ class ViewLora extends ViewRecord
                             $loraFile->loadImagesFromCivitAIForThisFile();
                         }
                     }
-
+                    if($redirect > 0){
+                        $this->redirect('/loras/'.$redirect);
+                    }
                 })
                 ->modalSubmitAction(false)
                 ->modalCancelAction(false),
