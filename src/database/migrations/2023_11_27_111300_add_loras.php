@@ -89,6 +89,9 @@ return new class extends Migration
                         $file->version_name = $metaData['name'];
                         $file->save();
                     }
+                } else {
+                    $file->version_name = 'unknown';
+                    $file->save();
                 }
             }
         }
