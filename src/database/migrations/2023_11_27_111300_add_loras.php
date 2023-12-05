@@ -81,7 +81,8 @@ return new class extends Migration
 
         $checkpointFiles = \App\Models\CheckpointFile::with(['parentModel'])->get();
         foreach ($checkpointFiles as $file){
-            $metaData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($file->parentModel->civitai_id, $file->civitai_version);
+            $parentModel = \App\Models\Checkpoint::findOrFail($file->checkpoint_id); // cause we have new names for everything...
+            $metaData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($parentModel->civitai_id, $file->civitai_version);
             if(isset($metaData['name'])){
                 $file->version_name = $metaData['name'];
                 $file->save();
