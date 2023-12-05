@@ -100,7 +100,12 @@ class CivitAIConnector
 
     public static function getSpecificModelVersionByModelIDAndVersionID(string $modelID, string $versionID) : array
     {
-        $modelVersions = self::getModelMetaByID($modelID)['modelVersions'];
+        $modelVersions = self::getModelMetaByID($modelID);
+        if(is_array($modelVersions)){
+            $modelVersions = $modelVersions['modelVersions'];
+        } else {
+            return [];
+        }
         foreach ($modelVersions as $version){
             if($version['id'] == $versionID){
                 return $version;

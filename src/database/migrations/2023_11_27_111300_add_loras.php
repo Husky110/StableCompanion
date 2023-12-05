@@ -87,12 +87,13 @@ return new class extends Migration
                 if(is_array($metaData)){ // if we have problems during update, this can be a string...
                     if(isset($metaData['name'])){
                         $file->version_name = $metaData['name'];
-                        $file->save();
+                    } else {
+                        $file->version_name = 'unknown';
                     }
                 } else {
                     $file->version_name = 'unknown';
-                    $file->save();
                 }
+                $file->save();
             }
         }
     }
