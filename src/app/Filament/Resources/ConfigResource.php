@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ConfigResource extends Resource
 {
+    protected static ?int $navigationSort = 11;
+
     protected static ?string $model = Config::class;
 
     protected static ?string $navigationIcon = 'heroicon-s-cog';
@@ -25,10 +27,7 @@ class ConfigResource extends Resource
     {
         return $form
             ->schema([
-                Tables\Columns\TextColumn::make('key')
-                    ->label('Key'),
-                Tables\Columns\TextInputColumn::make('value')
-                    ->label('Value')
+
             ]);
     }
 
@@ -36,7 +35,11 @@ class ConfigResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('key')
+                    ->label('Key'),
+                Tables\Columns\TextInputColumn::make('value')
+                    ->label('Value')
+                    ->rules(['required', 'url'])
             ])
             ->filters([
                 //
@@ -46,7 +49,8 @@ class ConfigResource extends Resource
             ])
             ->bulkActions([
 
-            ]);
+            ])
+            ->paginated(false);
     }
 
     public static function getRelations(): array

@@ -19,6 +19,9 @@ use Illuminate\Support\HtmlString;
 
 class DownloadResource extends Resource
 {
+
+    protected static ?int $navigationSort = 0;
+
     protected static ?string $model = CivitDownload::class;
 
     protected static ?string $navigationLabel = 'CivitAI-Downloads';
@@ -109,6 +112,7 @@ class DownloadResource extends Resource
                 Tables\Actions\DeleteAction::make('delete')
                     ->button()
                     ->action(function ($record){
+                        Aria2Connector::abortDownloadInAria2($record);
                         if($record->existingCheckpoint != null){
                             if($record->existingCheckpoint->files->count() == 0){
                                 $record->existingCheckpoint->deleteModel();

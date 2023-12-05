@@ -3,22 +3,23 @@
 namespace App\Models;
 
 use App\Http\Helpers\CivitAIConnector;
+use App\Models\DataStructures\CivitAIModelType;
 use App\Models\DataStructures\ModelBaseClass;
+use App\Models\DataStructures\ModelBaseClassInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
-class Lora extends ModelBaseClass
+class Lora extends ModelBaseClass implements ModelBaseClassInterface
 {
     public $timestamps = false;
 
     public $fillable = [
-        'lora_name',
-        'lora_type',
+        'model_name',
         'image_name',
         'civitai_id',
-        'civit_notes',
+        'civitai_notes',
         'user_notes',
     ];
 
@@ -35,7 +36,7 @@ class Lora extends ModelBaseClass
 
     public function files() : HasMany
     {
-        return $this->hasMany(LoraFile::class);
+        return $this->hasMany(LoraFile::class, 'base_id');
     }
 
     // -> activedownloads via parent Class
@@ -58,15 +59,15 @@ class Lora extends ModelBaseClass
         return $versionsNotInCollection;
     }
 
-    static function createNewModelFromCivitAI(array $civitAIModelData, bool $syncTags): static
+    public static function createNewModelFromCivitAI(array $civitAIModelData, bool $syncTags): static
     {
         $lora = new Lora([
-            'lora_name' => $civitAIModelData['name'],
+            'model_name' => $civitAIModelData['name'],
             'civitai_id' => $civitAIModelData['id'],
         ]);
         $lora->setModelImage($civitAIModelData);
 
-        $lora->civit_notes = $civitAIModelData['description'];
+        $lora->civitai_notes = $civitAIModelData['description'];
         $lora->save();
         if($syncTags){
             $lora->syncCivitAITags($civitAIModelData);
@@ -78,19 +79,34 @@ class Lora extends ModelBaseClass
     {
         $disk = Storage::disk('loras');
         foreach ($disk->allFiles() as $file){
+            $fileExtention = explode('.', $file);
+            $fileExtention = $fileExtention[count($fileExtention) - 1];
+            if(!in_array($fileExtention, ['safetensors', 'ckpt', 'pt', 'bin'])){
+                continue;
+            }
             $existingLoraFile = LoraFile::where('filepath', $file)->first();
             if($existingLoraFile == null){
-                $newLora = new Checkpoint([
-                    'lora_name' => basename($file),
+                $newLora = new Lora([
+                    'model_name' => basename($file),
                 ]);
                 $newLora->save();
                 $newLoraFile = new LoraFile([
-                    'lora_id' => $newLora->id,
+                    'base_id' => $newLora->id,
                     'filepath' => $file,
-                    'baseModel' => $disk->size($file) < 6442450944 ? 'Some SD-Model' : 'Some XL-Model',
+                    'baseModelType' => LoraFile::determineLoraTypeByFilename($file)
                 ]);
                 $newLoraFile->save();
             }
         }
+    }
+
+    public function getCivitAIModelType(): CivitAIModelType
+    {
+        return CivitAIModelType::LORA;
+    }
+
+    public static function getModelFileClass(): string
+    {
+        return LoraFile::class;
     }
 }

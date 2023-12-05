@@ -15,7 +15,8 @@ class CheckpointFile extends ModelFileBaseClass
     public string $diskname = 'checkpoints';
 
     public $fillable = [
-        'checkpoint_id',
+        'base_id',
+        'version_name',
         'filepath',
         'civitai_version',
         'civitai_description',
@@ -26,7 +27,7 @@ class CheckpointFile extends ModelFileBaseClass
     // Relations
     public function parentModel() : BelongsTo
     {
-        return $this->belongsTo(Checkpoint::class);
+        return $this->belongsTo(Checkpoint::class, 'base_id');
     }
 
     // -> images via parentClass

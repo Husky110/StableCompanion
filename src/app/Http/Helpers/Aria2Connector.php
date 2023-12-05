@@ -27,4 +27,20 @@ class Aria2Connector
             $download->save();
         }
     }
+
+    public static function abortDownloadInAria2(CivitDownload $download)
+    {
+        $aria2 = self::getInstance();
+        $status = $aria2->tellStatus($download->aria_id);
+        $file = $status['result']['files'][0]['path'];
+        self::getInstance()->forceRemove($download->aria_id);
+        sleep(1); // is here, so that aria2 can complete the request - otherwise the aria2-file might not be deleted.
+        if(file_exists($file)){
+            unlink($file);
+        }
+        $aria2File = $file.'.aria2';
+        if(file_exists($aria2File)){
+            unlink($aria2File);
+        }
+    }
 }

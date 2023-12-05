@@ -2,6 +2,8 @@
 
 namespace App\Models\DataStructures;
 
+use App\Http\Helpers\CivitAIConnector;
+use App\Models\CheckpointFile;
 use App\Models\CivitDownload;
 use App\Models\Tag;
 use Illuminate\Database\Eloquent\Model;
@@ -68,9 +70,26 @@ abstract class ModelBaseClass extends Model
         $this->tags()->syncWithoutDetaching($syncArray);
     }
 
+    public function queueCivitAIForOtherVersionsOfThisModel(string $modelFileClass) : array
+    {
+        if($this->civitai_id == null){
+            return [];
+        }
+        $metaData = CivitAIConnector::getModelMetaByID($this->civitai_id);
+        $versionsNotInCollection = [];
+        foreach ($metaData['modelVersions'] as $modelVersion){
+            if($modelFileClass::where('civitai_version', $modelVersion['id'])->count() == 0){
+                $versionsNotInCollection[$modelVersion['id']] = $modelVersion['name'];
+            }
+        }
+        return $versionsNotInCollection;
+    }
+
     abstract function checkIfOtherVersionsExistOnCivitAi() : array;
 
     abstract static function createNewModelFromCivitAI(array $civitAIModelData, bool $syncTags) : static;
 
     abstract static function checkModelFolderForNewFiles() : void;
+
+    abstract static function getModelFileClass() : string;
 }

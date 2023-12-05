@@ -59,13 +59,14 @@ Plus - technically you can use StableCompanion to also manage your models for Co
   3. Modify the newly created docker-compose.yml to your need
      1. Set the volumes accordingly (should be self-explaining inside the file - if you need help, see https://docs.docker.com/storage/volumes/#use-a-volume-with-docker-compose)
         - IMPORTANT: DO __NOT__ POINT THIS TO A SYMLINK! If you've symlinked your directories for A1111, please enter the destination-path here and not the symlink! Docker can't work with those! 
-     2. Set the URL accordingly -> if you run A1111 and SC on your local machine, just leave it be. If you are in a network change it to http://<IP OR COMPUTERNAME>:7861
+     2. Set the URL accordingly -> if you run A1111 and SC on your local machine, just leave it be. If you are in a network and want SC to be reachable change it to http://<IP OR COMPUTERNAME>:7861
   4. Run `docker compose build` and wait for it to finish.
   5. Run `docker compose up` (if you have the composer-plugin installed, that should work fine aswell) inside the docker-directory and go to http://localhost:7861 - Notice: You can run SC in the background by running `docker compose up -d`, but I recommend running it in foreground on the first start.
   6. The first run might take a bit, since composer has to install all dependencies - just wait a bit until you read `INFO exited: startup (exit status 0; expected)` - Notice: If you read `INFO gave up: startup entered FATAL state, too many start retries too quickly` on start - that's nothing to worry about. The startup-script bites itself a bit with supervisor. As long as php-fpm, nginx and aria are running you are fine. :) 
   7. Fireup A1111-WebUI (if not already up)
   8. Open SC and visit the Settings-Page
-     1. Set the URL to A1111-WebUi if you are running A1111 on a network-machine. If it runs on your computer, just leave it be.
+     1. If you install SC alongside A1111 (and haven't changed the port) you can leave the URL be.
+     2. However - if you have changed the port of A111 or run SC somewhere else in your network (possible if A1111 and SC use a NAS for files) please restart the SC-Container once you change the Setting. (Otherwise there will be problems with detections and such.)
 
 ### Update
   1. Run `git pull` inside the repo-folder
@@ -97,6 +98,8 @@ Since there are no "Frequently asked questions" yet I'm doing a "Possible asked 
 ## Troubleshooting
 ### Help - all Image-Files seem to be broken!
 Are you sure you set the URL within the docker-compose.yml correctly? Nope? Happened to me aswell. :) Just correct it and run SC again.
+### I'm getting an Exception `Something went wrong connecting to A1111!`
+In that case make sure that A1111 is up and running. Additionally check the A1111-URL-Key in your Settings. If you have to change it, please restart the SC-container after your change.
 
 ## Legal and stuff
 I'm releasing StableCompanion "as is" and take no responsibility of what you are doing with it. Please follow your local laws and respect the terms of the models and files you are downloading and managing.  

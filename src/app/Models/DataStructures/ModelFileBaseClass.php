@@ -18,7 +18,7 @@ abstract class ModelFileBaseClass extends Model
     // relevant relations
     public function images() : MorphMany
     {
-        return $this->morphMany(AIImage::class, 'model_file', 'model_file_class');
+        return $this->morphMany(AIImage::class, 'model_file');
     }
 
     abstract function parentModel() : BelongsTo;
@@ -49,7 +49,8 @@ abstract class ModelFileBaseClass extends Model
             $filename = $this->parentModel->civitai_id.'_'.$this->civitai_version.'_'.$this->id.'_'.basename($metaImage['url']);
             Storage::disk('ai_images')->put($filename, file_get_contents($metaImage['url']));
             $image = new AIImage([
-                'checkpoint_file_id' => $this->id,
+                'model_file_type' => static::class,
+                'model_file_id' => $this->id,
                 'filename' => $filename,
                 'positive' => $metaImage['meta']['prompt'],
                 'negative' => $metaImage['meta']['negativePrompt'],

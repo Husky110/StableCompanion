@@ -2,23 +2,27 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CheckpointResource\Pages;
-use App\Filament\Resources\CheckpointResource\RelationManagers;
-use App\Models\Checkpoint;
+use App\Filament\Resources\LoraResource\Pages;
+use App\Filament\Resources\LoraResource\RelationManagers;
+use App\Models\Lora;
+use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\HtmlString;
 
-class CheckpointResource extends Resource
+class LoraResource extends Resource
 {
-    protected static ?int $navigationSort = 1;
+    protected static ?string $model = Lora::class;
 
-    protected static ?string $model = Checkpoint::class;
+    protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationIcon = 'heroicon-s-paint-brush';
+    protected static ?string $navigationIcon = 'heroicon-o-sparkles';
+
+    protected static ?string $navigationLabel = 'LoRAs';
 
     public static function form(Form $form): Form
     {
@@ -48,16 +52,16 @@ class CheckpointResource extends Resource
                         }
                     })
                     ->tooltip(fn($record) => $record->model_name),
-                Tables\Columns\TextColumn::make('checkpoint_baseModel')
+                Tables\Columns\TextColumn::make('baseModels')
                     ->label('Base Models')
                     ->getStateUsing(function ($record){
-                       $bases = [];
-                       foreach ($record->files as $file){
-                           if(!in_array($file->baseModel, $bases)){
-                               $bases[] = $file->baseModel;
-                           }
-                       }
-                       return implode(', ', $bases);
+                        $bases = [];
+                        foreach ($record->files as $file){
+                            if(!in_array($file->baseModel, $bases)){
+                                $bases[] = $file->baseModel;
+                            }
+                        }
+                        return implode(', ', $bases);
                     }),
                 Tables\Columns\TextColumn::make('files')
                     ->label('Files')
@@ -96,8 +100,8 @@ class CheckpointResource extends Resource
                     ->trueLabel('SD-Models')
                     ->falseLabel('XL-Models')
                     ->queries(
-                        true: fn (Builder $query) => $query->whereHas('files', fn($query) => $query->whereNot('baseModel', 'like', '%XL%')),
-                        false: fn (Builder $query) => $query->whereHas('files', fn($query) => $query->where('baseModel', 'like', '%XL%')),
+                        true: fn (Builder $query) => $query->whereHas('files', fn($query) => $query->whereNot('baseModelType', 'like', '%XL%')),
+                        false: fn (Builder $query) => $query->whereHas('files', fn($query) => $query->where('baseModelType', 'like', '%XL%')),
                         blank: fn (Builder $query) => $query,
                     ),
                 Tables\Filters\Filter::make('only_unliked')
@@ -110,23 +114,21 @@ class CheckpointResource extends Resource
                     ->query(fn($query) => $query->has('activedownloads')),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make('view')
+                Tables\Actions\ViewAction::make()
                     ->button(),
                 Tables\Actions\DeleteAction::make('delete')
                     ->button()
                     ->action(function ($record){
-                        foreach ($record->files as $checkpointFile){
-                            $checkpointFile->deleteModelFile();
+                        foreach ($record->files as $loraFile){
+                            $loraFile->deleteModelFile();
                         }
                         $record->deleteModel();
                     })
-                    ->modalDescription('Are you sure you want to delete this checkpoint? This will also delete all versions and images! Continue?')
+                    ->modalDescription('Are you sure you want to delete this LoRA? This will also delete all versions and images! Continue?')
             ])
             ->bulkActions([
 
-            ])
-            ->poll('60s')
-            ->defaultSort('model_name');
+            ]);
     }
 
     public static function getRelations(): array
@@ -139,8 +141,8 @@ class CheckpointResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCheckpoints::route('/'),
-            'view' => Pages\ViewCheckpoint::route('/{record}')
+            'index' => Pages\ListLoras::route('/'),
+            'view' => Pages\ViewLora::route('/{record}'),
         ];
     }
 }

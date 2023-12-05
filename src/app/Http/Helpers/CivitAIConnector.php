@@ -8,7 +8,7 @@ class CivitAIConnector
 {
     private static string $baseURL = 'https://civitai.com/api/v1/';
 
-    private static function sendRequest(string $url) : string
+    public static function sendRequest(string $url) : string
     {
         $options = array(
             CURLOPT_URL            => $url,
@@ -27,17 +27,20 @@ class CivitAIConnector
         $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $statusCode = curl_getinfo($ch,CURLINFO_HTTP_CODE);
         if($statusCode >= 400 && $statusCode <= 600){
-            throw new \Exception('CivitAI is not available at the moment! Please try again later!');
+            if($statusCode == 404){
+                return '404';
+            }
+            return 'Error: CivitAI is not available at the moment! Please try again later!';
         }
         $body = substr($raw_response, $header_size);
         if(curl_errno($ch) === 0){
             return $body;
         } else {
-            throw new \Exception('Something went wrong connecting to CivitAI!');
+            return 'Error: Something went wrong connecting to CivitAI!';
         }
     }
 
-    public static function getModelMetaByID(string $id) : array
+    public static function getModelMetaByID(string $id) : array | string
     {
         $cache = Storage::disk('civitai_cache');
         $cacheFilename = $id.'.json';
@@ -51,7 +54,12 @@ class CivitAIConnector
             }
         }
         if($buildCache){
-            $cache->put($cacheFilename, self::sendRequest(self::$baseURL.'models/'.$id));
+            $requestResponse = self::sendRequest(self::$baseURL.'models/'.$id);
+            if($requestResponse != '404' && !str_starts_with($requestResponse, 'Error')){
+                $cache->put($cacheFilename, $requestResponse);
+            } else {
+                return $requestResponse;
+            }
         }
         return json_decode($cache->get($cacheFilename), true);
     }
@@ -71,6 +79,11 @@ class CivitAIConnector
     public static function getModelTypeByModelID(string $modelID) : string
     {
         $modelData = self::getModelMetaByID($modelID);
+        if(is_string($modelData)){
+            if($modelData == 404 || str_starts_with($modelData, 'Error')){
+                return $modelData;
+            }
+        }
         return $modelData['type'];
     }
 

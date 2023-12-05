@@ -41,7 +41,7 @@ class CivitDownload extends Model
         $download = new CivitDownload([
             'civit_id' => $modelID,
             'version' => $modelVersion,
-            'type' => $modelType->value.'_'.(str_contains($specificModelVersion['baseModel'], 'XL') ? 'xl' : 'sd'),
+            'type' => strtolower($modelType->name).'_'.(str_contains($specificModelVersion['baseModel'], 'XL') ? 'xl' : 'sd'),
             'url' => $specificModelVersion['downloadUrl'],
             'status' => 'pending',
             'aria_id' => null,

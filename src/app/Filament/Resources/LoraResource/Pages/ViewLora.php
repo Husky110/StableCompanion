@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\CheckpointResource\Pages;
+namespace App\Filament\Resources\LoraResource\Pages;
 
-use App\Filament\Resources\CheckpointResource;
 use App\Filament\Resources\CheckpointResource\Helpers\GeneralFrontendHelper;
+use App\Filament\Resources\LoraResource;
 use App\Http\Helpers\CivitAIConnector;
-use App\Models\Checkpoint;
-use App\Models\CheckpointFile;
 use App\Models\CivitDownload;
 use App\Models\DataStructures\CivitAIModelType;
+use App\Models\Lora;
+use App\Models\LoraFile;
 use Filament\Actions;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -27,9 +27,9 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
-class ViewCheckpoint extends ViewRecord
+class ViewLora extends ViewRecord
 {
-    protected static string $resource = CheckpointResource::class;
+    protected static string $resource = LoraResource::class;
 
     public function getTitle(): string|Htmlable
     {
@@ -38,13 +38,13 @@ class ViewCheckpoint extends ViewRecord
 
     public function getHeading(): string|Htmlable
     {
-        return 'Checkpoint: '.$this->record->model_name;
+        return 'LoRA/LyCON/LyCORIS: '.$this->record->model_name;
     }
 
     public function getSubheading(): string|Htmlable|null
     {
         if($this->record->files->count() == 0){
-            return 'This checkpoint is still beeing downloaded! Please come back once it\'s finished.';
+            return 'This model is still beeing downloaded! Please come back once it\'s finished.';
         } else {
             return null;
         }
@@ -59,25 +59,25 @@ class ViewCheckpoint extends ViewRecord
     {
         return [
             Actions\Action::make('link_to_civitai')
-                ->label('Link this Checkpoint to CivitAI-Model')
-                ->modalDescription('Beware: You do this on your own accountability! If you link this to a wrong model, that\'s on you! I can\'t really check that what you do here is correct. If you add an URL of an already existing model, it will be linked to that. (Sorry - can\'t really put a Checkpoint-Selector here...)')
+                ->label('Link this LoRA to CivitAI-Model')
+                ->modalDescription('Beware: You do this on your own accountability! If you link this to a wrong model, that\'s on you! I can\'t really check that what you do here is correct. If you add an URL of an already existing model, it will be linked to that. (Sorry - can\'t really put a LoRA-Selector here...)')
                 ->button()
                 ->visible(!(bool)$this->record->civitai_id)
                 ->form([GeneralFrontendHelper::buildCivitAILinkingWizard($this->record)])
                 ->action(function ($data){
-                    $exisitingCheckpoint = Checkpoint::where('civitai_id', $data['modelID'])->first();
-                    if($exisitingCheckpoint){
-                        foreach ($exisitingCheckpoint->files as $existingFile){
-                            $existingFile->base_id = $exisitingCheckpoint;
+                    $exisitingLora = Lora::where('civitai_id', $data['modelID'])->first();
+                    if($exisitingLora){
+                        foreach ($exisitingLora->files as $existingFile){
+                            $existingFile->base_id = $exisitingLora;
                             $existingFile->civitai_version = $data['files'][$existingFile->id]['version'];
                             if($data['remove_duplicates']){
-                                foreach ($data['files'] as $linkingCheckpointFileID => $linkingData){
+                                foreach ($data['files'] as $linkingLoraFileID => $linkingData){
                                     if($linkingData['version'] == 'custom'){
                                         continue;
                                     }
                                     if($linkingData['version'] == $existingFile->version){
                                         $existingFile->deleteModelFile();
-                                        unset($data['files'][$linkingCheckpointFileID]);
+                                        unset($data['files'][$linkingLoraFileID]);
                                         break;
                                     }
                                 }
@@ -95,18 +95,21 @@ class ViewCheckpoint extends ViewRecord
                         if($data['sync_tags']){
                             $this->record->syncCivitAITags($modelData);
                         }
-                        foreach ($this->record->files as $checkpointFile){
-                            $checkpointFile->civitai_version = $data['files'][$checkpointFile->id]['version'];
-                            $checkpointFile->civitai_description = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($data['modelID'], $checkpointFile->civitai_version)['description'];
-                            $checkpointFile->save();
+                        foreach ($this->record->files as $loraFile){
+                            $loraFile->civitai_version = $data['files'][$loraFile->id]['version'];
+                            $modelFileSpecificData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($data['modelID'], $loraFile->civitai_version);
+                            $loraFile->civitai_description = $modelFileSpecificData['description'];
+                            $loraFile->baseModelType = $modelFileSpecificData['baseModel'];
+                            $loraFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
+                            $loraFile->save();
                         }
                     }
                     // okay, now we check if we have to load image-files from CivitAI...
-                    foreach ($data['files'] as $dataCheckpointFileID => $dataFile){
+                    foreach ($data['files'] as $dataLoraFileID => $dataFile){
                         if($dataFile['sync_examples']){
-                            //Reload the CheckpointFile - just in case...
-                            $checkpointFile = CheckpointFile::with(['parentModel'])->findOrFail($dataCheckpointFileID);
-                            $checkpointFile->loadImagesFromCivitAIForThisFile();
+                            //Reload the LoRAFile - just in case...
+                            $loraFile = LoraFile::with(['parentModel'])->findOrFail($dataLoraFileID);
+                            $loraFile->loadImagesFromCivitAIForThisFile();
                         }
                     }
 
@@ -130,7 +133,7 @@ class ViewCheckpoint extends ViewRecord
                 ->action(function ($data){
                     foreach ($data['versions'] as $version){
                         CivitDownload::downloadFileFromCivitAI(
-                          CivitAIModelType::CHECKPOINT,
+                            CivitAIModelType::LORA,
                             $this->record->civitai_id,
                             $version,
                             $data['sync_images']
@@ -177,7 +180,7 @@ class ViewCheckpoint extends ViewRecord
                             Section::make()
                                 ->schema([
                                     TextEntry::make('model_name')
-                                        ->label('Checkpointname:')
+                                        ->label('Loraname:')
                                         ->inlineLabel(),
                                     TextEntry::make('link')
                                         ->label('CivitAI-Link: ')
@@ -185,8 +188,8 @@ class ViewCheckpoint extends ViewRecord
                                         ->getStateUsing(fn($record) => new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($record->civitai_id).'" target="_blank">'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($record->civitai_id).'</a>'))
                                         ->visible(fn($record) => $record->civitai_id != null),
                                     \Filament\Infolists\Components\Actions::make([
-                                        Action::make('change_checkpointname')
-                                            ->label('Change Checkpointname')
+                                        Action::make('change_loraname')
+                                            ->label('Change Loraname')
                                             ->button()
                                             ->form([
                                                 TextInput::make('model_name')
@@ -198,7 +201,7 @@ class ViewCheckpoint extends ViewRecord
                                                 $this->record->save();
                                             }),
                                     ])
-                                    ->fullWidth(),
+                                        ->fullWidth(),
                                     Section::make('Tags')
                                         ->extraAttributes(['style' => 'max-height: 200px; overflow-y: scroll;'])
                                         ->schema(function (){
@@ -213,7 +216,7 @@ class ViewCheckpoint extends ViewRecord
                                                     ->modalHeading('Manage Tags')
                                                     ->fillForm([$this->record])
                                                     ->form([
-                                                        Repeater::make('checkpointTags')
+                                                        Repeater::make('loraTags')
                                                             ->label(false)
                                                             ->relationship()
                                                             ->schema([
@@ -269,9 +272,9 @@ class ViewCheckpoint extends ViewRecord
                 foreach ($this->record->files->sortBy([
                     ['civitai_version', 'desc'],
                     ['id', 'desc']
-                ]) as $checkpointFile){
+                ]) as $loraFile){
                     $civitImages = [];
-                    foreach ($checkpointFile->images->where('source', 'CivitAI') as $aiImage){
+                    foreach ($loraFile->images->where('source', 'CivitAI') as $aiImage){
                         $civitImages[] = ImageEntry::make('aiImage_'.$aiImage->id)
                             ->label(false)
                             ->disk('ai_images')
@@ -288,7 +291,7 @@ class ViewCheckpoint extends ViewRecord
                                 GeneralFrontendHelper::buildExampleImageViewAction($aiImage),
                             );
                     }
-                    $retval[] = Section::make(basename($checkpointFile->filepath))
+                    $retval[] = Section::make(basename($loraFile->filepath))
                         ->schema([
                             Section::make('CivitAI-Images')
                                 ->schema($civitImages)
@@ -301,69 +304,69 @@ class ViewCheckpoint extends ViewRecord
                                             TextEntry::make('filepath')
                                                 ->inlineLabel()
                                                 ->label('FilePath:')
-                                                ->getStateUsing($checkpointFile->filepath),
+                                                ->getStateUsing($loraFile->filepath),
                                             TextEntry::make('version_name')
                                                 ->label('Version:')
                                                 ->inlineLabel()
-                                                ->getStateUsing($checkpointFile->version_name)
-                                                ->visible((bool)$checkpointFile->version_name),
+                                                ->getStateUsing($loraFile->version_name)
+                                                ->visible((bool)$loraFile->version_name),
                                             TextEntry::make('civitai_version')
                                                 ->label('CivitAI-Version-ID/-Link')
                                                 ->inlineLabel()
-                                                ->getStateUsing($checkpointFile->civitai_version ? new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($this->record->civitai_id, $checkpointFile->civitai_version).'" target="_blank">'.$checkpointFile->civitai_version.'</a>') : '')
-                                                ->visible((bool)$checkpointFile->civitai_version),
-                                            TextEntry::make('base_model')
+                                                ->getStateUsing($loraFile->civitai_version ? new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($this->record->civitai_id, $loraFile->civitai_version).'" target="_blank">'.$loraFile->civitai_version.'</a>') : '')
+                                                ->visible((bool)$loraFile->civitai_version),
+                                            TextEntry::make('baseModelType')
                                                 ->inlineLabel()
                                                 ->label('Base Model:')
-                                                ->getStateUsing($checkpointFile->baseModel),
+                                                ->getStateUsing($loraFile->baseModelType),
                                             TextEntry::make('trained_words')
                                                 ->label('Trained words:')
                                                 ->inlineLabel()
-                                                ->getStateUsing(fn($record) => $record->trained_words ? implode(', ', json_decode($record->trained_words, true)) : '')
-                                                ->visible(fn($record) => (bool)$record->trained_words),
+                                                ->getStateUsing($loraFile->trained_words ? implode(', ', json_decode($loraFile->trained_words, true)) : '')
+                                                ->visible((bool)$loraFile->trained_words),
                                             \Filament\Infolists\Components\Actions::make([
-                                                Action::make('rename_checkpointfile')
+                                                Action::make('rename_lorafile')
                                                     ->label('Change Filename')
                                                     ->button()
                                                     ->form([
-                                                        Hidden::make('checkpointfile_id'),
+                                                        Hidden::make('lorafile_id'),
                                                         TextInput::make('file_name')
                                                             ->label(false)
                                                             ->hint('Please make sure you keep the correct the fileextention!')
                                                     ])
-                                                    ->fillForm(function () use ($checkpointFile){
+                                                    ->fillForm(function () use ($loraFile){
                                                         $retval = [
-                                                            'checkpointfile_id' => $checkpointFile->id,
-                                                            'file_name' => basename($checkpointFile->filepath)
+                                                            'lorafile_id' => $loraFile->id,
+                                                            'file_name' => basename($loraFile->filepath)
                                                         ];
                                                         return $retval;
                                                     })
                                                     ->action(function($data){
-                                                        $checkpointFile = CheckpointFile::findOrFail($data['checkpointfile_id']);
-                                                        $originalpath = Storage::disk('checkpoints')->path($checkpointFile->filepath);
+                                                        $loraFile = LoraFile::findOrFail($data['lorafile_id']);
+                                                        $originalpath = Storage::disk('loras')->path($loraFile->filepath);
                                                         $modifiedPath = explode('/', $originalpath);
                                                         $modifiedPath[count($modifiedPath) - 1] = $data['file_name'];
                                                         $modifiedPath = implode('/', $modifiedPath);
                                                         rename($originalpath, $modifiedPath);
-                                                        $checkpointFile->filepath = str_replace(Storage::disk('checkpoints')->path(''), '', $modifiedPath);
-                                                        $checkpointFile->save();
+                                                        $loraFile->filepath = str_replace(Storage::disk('loras')->path(''), '', $modifiedPath);
+                                                        $loraFile->save();
                                                     }),
-                                                Action::make('delete_checkpointfile')
-                                                    ->label('Delete checkpointfile')
+                                                Action::make('delete_lorafile')
+                                                    ->label('Delete Lorafile')
                                                     ->button()
                                                     ->color('danger')
                                                     ->requiresConfirmation()
-                                                    ->modalDescription('If this is the last file in that checkpoint, the checkpoint will also be deleted. Are you sure you would like to do this?')
-                                                    ->form([Hidden::make('checkpoint_file_id')])
-                                                    ->fillForm(['checkpoint_file_id' => $checkpointFile->id])
+                                                    ->modalDescription('If this is the last file in that lora, the lora will also be deleted. Are you sure you would like to do this?')
+                                                    ->form([Hidden::make('lora_file_id')])
+                                                    ->fillForm(['lora_file_id' => $loraFile->id])
                                                     ->action(function ($data){
-                                                        $checkpointFile = CheckpointFile::with(['images'])->findOrFail($data['checkpoint_file_id']);
-                                                        $checkpointID = $checkpointFile->base_id;
-                                                        $checkpointFile->deleteModelFile();
-                                                        $checkpoint = Checkpoint::with(['files'])->findOrFail($checkpointID);
-                                                        if($checkpoint->files->count() == 0){
-                                                            $checkpoint->deleteModel();
-                                                            $this->redirect(route('filament.admin.resources.checkpoints.index'));
+                                                        $loraFile = LoraFile::with(['images'])->findOrFail($data['lora_file_id']);
+                                                        $loraID = $loraFile->base_id;
+                                                        $loraFile->deleteModelFile();
+                                                        $lora = Lora::with(['files'])->findOrFail($loraID);
+                                                        if($lora->files->count() == 0){
+                                                            $lora->deleteModel();
+                                                            $this->redirect(route('filament.admin.resources.loras.index'));
                                                         }
 
                                                     })
@@ -372,7 +375,7 @@ class ViewCheckpoint extends ViewRecord
                                     Section::make('CivitAI-Description')
                                         ->schema([
                                             TextEntry::make('civitai_notes')
-                                                ->getStateUsing(fn() => $checkpointFile->civitai_description ? GeneralFrontendHelper::wrapHTMLStringToImplementBreaks($checkpointFile->civitai_description) : 'No additional informations given.')
+                                                ->getStateUsing(fn() => $loraFile->civitai_description ? GeneralFrontendHelper::wrapHTMLStringToImplementBreaks($loraFile->civitai_description) : 'No additional informations given.')
                                                 ->extraAttributes(['style' => 'max-height: 200px; overflow-y: scroll;'])
                                                 ->label(false)
                                         ])->visible((bool)$this->record->civitai_id),
