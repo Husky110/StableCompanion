@@ -26,9 +26,20 @@ class CivitDownload extends Model
     ];
 
     // Relations
-    public function existingCheckpoint() : BelongsTo
+    public function existingModel() : BelongsTo
     {
-        return $this->belongsTo(Checkpoint::class, 'civit_id', 'civitai_id');
+        switch ($this->type){
+            case 'checkpoint_sd':
+            case 'checkpoint_xl':
+                return $this->belongsTo(Checkpoint::class, 'civit_id', 'civitai_id');
+                break;
+            case 'lora_sd':
+            case 'lora_xl':
+                return $this->belongsTo(Lora::class, 'civit_id', 'civitai_id');
+                break;
+            default:
+                throw new \Exception('Unknown downloadtype!');
+        }
     }
 
     public static function downloadFileFromCivitAI(CivitAIModelType $modelType, string $modelID, string $modelVersion, bool $syncExamples)

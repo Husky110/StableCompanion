@@ -113,9 +113,9 @@ class DownloadResource extends Resource
                     ->button()
                     ->action(function ($record){
                         Aria2Connector::abortDownloadInAria2($record);
-                        if($record->existingCheckpoint != null){
-                            if($record->existingCheckpoint->files->count() == 0){
-                                $record->existingCheckpoint->deleteModel();
+                        if($record->existingModel != null){
+                            if($record->existingModel->files->count() == 0 && $record->existingModel->activedownloads->count() == 0){
+                                $record->existingModel->deleteModel();
                             }
                         }
                         $record->delete();
