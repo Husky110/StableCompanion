@@ -66,7 +66,6 @@ class CivitAIConnector
                 return $requestResponse;
             }
         }
-        dd($cache->get($cacheFilename));
         return json_decode($cache->get($cacheFilename), true);
     }
 
