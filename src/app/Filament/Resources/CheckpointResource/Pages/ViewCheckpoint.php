@@ -120,7 +120,7 @@ class ViewCheckpoint extends ViewRecord
                     }
 
                     if($redirect > 0){
-                        $this->redirect('/loras/'.$redirect);
+                        $this->redirect('/checkpoints/'.$redirect);
                     }
 
                 })
