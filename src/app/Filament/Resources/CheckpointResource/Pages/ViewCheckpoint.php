@@ -65,11 +65,12 @@ class ViewCheckpoint extends ViewRecord
                 ->visible(!(bool)$this->record->civitai_id)
                 ->form([GeneralFrontendHelper::buildCivitAILinkingWizard($this->record)])
                 ->action(function ($data){
+                    // TODO: this thing makes no sense... same with loras... just rewrite it and make a standard-method...
                     $exisitingCheckpoint = Checkpoint::where('civitai_id', $data['modelID'])->first();
+                    $redirect = 0;
                     if($exisitingCheckpoint){
+                        $redirect = $exisitingCheckpoint->id;
                         foreach ($exisitingCheckpoint->files as $existingFile){
-                            $existingFile->base_id = $exisitingCheckpoint;
-                            $existingFile->civitai_version = $data['files'][$existingFile->id]['version'];
                             if($data['remove_duplicates']){
                                 foreach ($data['files'] as $linkingCheckpointFileID => $linkingData){
                                     if($linkingData['version'] == 'custom'){
@@ -81,10 +82,18 @@ class ViewCheckpoint extends ViewRecord
                                         break;
                                     }
                                 }
-                            } else {
-                                $existingFile->save();
                             }
                         }
+                        foreach ($this->record->files as $oldFile){
+                            $oldFile->base_id = $exisitingCheckpoint->id;
+                            $oldFile->civitai_version = $data['files'][$oldFile->id]['version'];
+                            $modelFileSpecificData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($data['modelID'], $oldFile->civitai_version);
+                            $oldFile->civitai_description = $modelFileSpecificData['description'];
+                            $oldFile->baseModelType = $modelFileSpecificData['baseModel'];
+                            $oldFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
+                            $oldFile->save();
+                        }
+                        $this->record->deleteModel();
                     } else {
                         $modelData = CivitAIConnector::getModelMetaByID($data['modelID']);
                         $this->record->model_name = $modelData['name'];
@@ -108,6 +117,10 @@ class ViewCheckpoint extends ViewRecord
                             $checkpointFile = CheckpointFile::with(['parentModel'])->findOrFail($dataCheckpointFileID);
                             $checkpointFile->loadImagesFromCivitAIForThisFile();
                         }
+                    }
+
+                    if($redirect > 0){
+                        $this->redirect('/loras/'.$redirect);
                     }
 
                 })
