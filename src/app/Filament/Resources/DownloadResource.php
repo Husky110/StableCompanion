@@ -64,7 +64,7 @@ class DownloadResource extends Resource
                     ->getStateUsing(fn($record) => CivitAIConnector::getModelMetaByID($record->civit_id)['name'].' - '.CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($record->civit_id, $record->version)['name']),
                 Tables\Columns\TextColumn::make('link')
                     ->label('CivitAI-URL')
-                    ->getStateUsing(fn($record) => new HtmlString('<a href="civitai.com/models/'.$record->civit_id.'?modelVersionId='.$record->version.'" target="_blank">Link</a>')),
+                    ->getStateUsing(fn($record) => new HtmlString('<a href="https://civitai.com/models/'.$record->civit_id.'?modelVersionId='.$record->version.'" target="_blank">Link</a>')),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')
                     ->getStateUsing(fn($record) => strtoupper($record->type)),
