@@ -34,7 +34,7 @@ class Aria2Connector
         $status = $aria2->tellStatus($download->aria_id);
         self::getInstance()->forceRemove($download->aria_id);
         sleep(1); // is here, so that aria2 can complete the request - otherwise the aria2-file might not be deleted.
-        if($status['result']){
+        if(isset($status['result']['files'][0]['path'])){
             $file = $status['result']['files'][0]['path'];
             if(file_exists($file)){
                 unlink($file);

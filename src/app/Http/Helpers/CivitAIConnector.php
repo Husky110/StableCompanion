@@ -33,6 +33,11 @@ class CivitAIConnector
             return 'Error: CivitAI is not available at the moment! Please try again later!';
         }
         $body = substr($raw_response, $header_size);
+        if(str_contains($body, '<title>We\'ll be right back')){
+            // the civitAI-API does not give us a 503 or 50x when they are doing maintenance... instead we get a 200...
+            // if any of the civitai-staff reads this: IDIOTS! FIX YOUR API! NOW I HAVE TO DO THIS UNPERFORMANT CRAP! -.-
+            return 'Error: CivitAI is not available at the moment! Please try again later!';
+        }
         if(curl_errno($ch) === 0){
             return $body;
         } else {
@@ -61,6 +66,7 @@ class CivitAIConnector
                 return $requestResponse;
             }
         }
+        dd($cache->get($cacheFilename));
         return json_decode($cache->get($cacheFilename), true);
     }
 
