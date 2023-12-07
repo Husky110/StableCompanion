@@ -37,6 +37,10 @@ class CivitDownload extends Model
             case 'lora_xl':
                 return $this->belongsTo(Lora::class, 'civit_id', 'civitai_id');
                 break;
+            case 'embedding_sd':
+            case 'embedding_xl':
+                return $this->belongsTo(Embedding::class, 'civit_id', 'civitai_id');
+                break;
             default:
                 throw new \Exception('Unknown downloadtype!');
         }
