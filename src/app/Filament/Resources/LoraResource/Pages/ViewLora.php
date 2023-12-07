@@ -300,9 +300,7 @@ class ViewLora extends ViewRecord
                                                     ->action(function($data){
                                                         $loraFile = LoraFile::findOrFail($data['lorafile_id']);
                                                         $originalpath = Storage::disk('loras')->path($loraFile->filepath);
-                                                        $modifiedPath = explode('/', $originalpath);
-                                                        $modifiedPath[count($modifiedPath) - 1] = $data['file_name'];
-                                                        $modifiedPath = implode('/', $modifiedPath);
+                                                        $modifiedPath = $data['file_name'];
                                                         rename($originalpath, $modifiedPath);
                                                         $loraFile->filepath = str_replace(Storage::disk('loras')->path(''), '', $modifiedPath);
                                                         $loraFile->save();
