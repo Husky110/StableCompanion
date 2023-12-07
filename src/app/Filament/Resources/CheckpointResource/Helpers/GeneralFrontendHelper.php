@@ -379,6 +379,7 @@ class GeneralFrontendHelper
                         $oldFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
                         break;
                     case Lora::class:
+                    case Embedding::class:
                         $oldFile->baseModelType = $modelFileSpecificData['baseModel'];
                         $oldFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
                         break;
