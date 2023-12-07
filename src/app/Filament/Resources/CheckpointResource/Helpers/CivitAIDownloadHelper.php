@@ -56,6 +56,13 @@ class CivitAIDownloadHelper
                                 break;
                         }
                     })
+                    ->hint(function () use ($typeForURL){
+                        if($typeForURL == CivitAIModelType::EMBEDDING){
+                            return 'There is a known problem with linking Embeddings that have more than one file in the same version! If you are trying this, please delete your local files and reimport the embedding via "Import from CivitAI" in the overview!';
+                        } else {
+                            return false;
+                        }
+                    })
             ])->afterValidation(function ($get, $set){
                 $modelID = CivitAIConnector::extractModelIDFromCivitAIURL($get('url'));
                 $set('versions', json_encode(CivitAIConnector::getModelVersionsByModelID($modelID), JSON_UNESCAPED_UNICODE));
