@@ -8,6 +8,8 @@ use App\Models\AIImage;
 use App\Models\Checkpoint;
 use App\Models\CheckpointFile;
 use App\Models\CivitDownload;
+use App\Models\Embedding;
+use App\Models\EmbeddingFile;
 use App\Models\Lora;
 use App\Models\LoraFile;
 use Illuminate\Console\Command;
@@ -29,6 +31,8 @@ class AriaFinishDownloadCommand extends Command
      */
     protected $description = 'Script that\'s beeing run, when Aria2c finishes a download.';
 
+    protected string $downloadPath = '';
+
     /**
      * Execute the console command.
      */
@@ -37,6 +41,7 @@ class AriaFinishDownloadCommand extends Command
     {
         $ariaID = $this->argument('ariaID');
         $downloadPath = $this->argument('downloadPath');
+        $this->downloadPath = $downloadPath;
         $civitAIDownload = CivitDownload::where('aria_id', $ariaID)->first();
         if(!$civitAIDownload){
             return;
@@ -56,9 +61,9 @@ class AriaFinishDownloadCommand extends Command
                 }
                 $this->info($filePath);
                 if(rename($downloadPath, $filePath)){
-                    $loraFile = $this->createCheckpointFile($civitAIDownload, 'sd/'.basename($filePath));
+                    $embeddingFile = $this->createCheckpointFile($civitAIDownload, 'sd/'.basename($filePath));
                     if($civitAIDownload->load_examples){
-                        $loraFile->loadImagesFromCivitAIForThisFile();
+                        $embeddingFile->loadImagesFromCivitAIForThisFile();
                     }
                     $civitAIDownload->delete();
                 } else {
@@ -72,10 +77,10 @@ class AriaFinishDownloadCommand extends Command
                     mkdir(dirname($filePath));
                 }
                 if(rename($downloadPath, $filePath)){
-                    $loraFile = $this->createCheckpointFile($civitAIDownload, 'xl/'.basename($filePath));
+                    $embeddingFile = $this->createCheckpointFile($civitAIDownload, 'xl/'.basename($filePath));
                     // loading Images for Checkpoint
                     if($civitAIDownload->load_examples){
-                        $loraFile->loadImagesFromCivitAIForThisFile();
+                        $embeddingFile->loadImagesFromCivitAIForThisFile();
                     }
                     $civitAIDownload->delete();
                 } else {
@@ -89,10 +94,10 @@ class AriaFinishDownloadCommand extends Command
                     mkdir(dirname($filePath));
                 }
                 if(rename($downloadPath, $filePath)){
-                    $loraFile = $this->createLoraFile($civitAIDownload, 'sd/'.basename($filePath));
+                    $embeddingFile = $this->createLoraFile($civitAIDownload, 'sd/'.basename($filePath));
                     // loading Images for LoRA
                     if($civitAIDownload->load_examples){
-                        $loraFile->loadImagesFromCivitAIForThisFile();
+                        $embeddingFile->loadImagesFromCivitAIForThisFile();
                     }
                     $civitAIDownload->delete();
                 } else {
@@ -106,16 +111,51 @@ class AriaFinishDownloadCommand extends Command
                     mkdir(dirname($filePath));
                 }
                 if(rename($downloadPath, $filePath)){
-                    $loraFile = $this->createLoraFile($civitAIDownload, 'xl/'.basename($filePath));
+                    $embeddingFile = $this->createLoraFile($civitAIDownload, 'xl/'.basename($filePath));
                     // loading Images for LoRA
                     if($civitAIDownload->load_examples){
-                        $loraFile->loadImagesFromCivitAIForThisFile();
+                        $embeddingFile->loadImagesFromCivitAIForThisFile();
                     }
                     $civitAIDownload->delete();
                 } else {
                     $civitAIDownload->status = 'error_moving_file';
                     $civitAIDownload->save();
                 }
+                break;
+            case 'embedding_sd':
+                $filePath = Storage::disk('embeddings')->path('').'sd/'.$civitAIDownload->civit_id.'_'.$civitAIDownload->version.'_'.basename($downloadPath);
+                if(!is_dir(dirname($filePath))){
+                    mkdir(dirname($filePath));
+                }
+                if(rename($downloadPath, $filePath)){
+                    $embeddingFile = $this->createEmebeddingFile($civitAIDownload, 'sd/'.basename($filePath));
+                    // loading Images for LoRA
+                    if($civitAIDownload->load_examples){
+                        $embeddingFile->loadImagesFromCivitAIForThisFile();
+                    }
+                    $civitAIDownload->delete();
+                } else {
+                    $civitAIDownload->status = 'error_moving_file';
+                    $civitAIDownload->save();
+                }
+                break;
+            case 'embedding_xl':
+                $filePath = Storage::disk('embeddings')->path('').'xl/'.$civitAIDownload->civit_id.'_'.$civitAIDownload->version.'_'.basename($downloadPath);
+                if(!is_dir(dirname($filePath))){
+                    mkdir(dirname($filePath));
+                }
+                if(rename($downloadPath, $filePath)){
+                    $embeddingFile = $this->createEmebeddingFile($civitAIDownload, 'sd/'.basename($filePath));
+                    // loading Images for LoRA
+                    if($civitAIDownload->load_examples){
+                        $embeddingFile->loadImagesFromCivitAIForThisFile();
+                    }
+                    $civitAIDownload->delete();
+                } else {
+                    $civitAIDownload->status = 'error_moving_file';
+                    $civitAIDownload->save();
+                }
+                break;
                 break;
             default:
                 return;
@@ -161,5 +201,21 @@ class AriaFinishDownloadCommand extends Command
         ]);
         $lorafile->save();
         return $lorafile;
+    }
+
+    private function createEmebeddingFile(CivitDownload $download, string $filepath) : EmbeddingFile
+    {
+        $metaData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($download->civit_id, $download->version);
+        $embeddingfile = new EmbeddingFile([
+            'base_id' => Embedding::where('civitai_id', $download->civit_id)->firstOrFail()->id,
+            'version_name' => $metaData['name'] ?? null,
+            'filepath' => $filepath,
+            'civitai_version' => $download->version,
+            'civitai_description' => $metaData['description'],
+            'baseModelType' => $metaData['baseModel'],
+            'trained_words' => json_encode([explode('.',basename($this->downloadPath))[0]], JSON_UNESCAPED_UNICODE)
+        ]);
+        $embeddingfile->save();
+        return $embeddingfile;
     }
 }

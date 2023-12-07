@@ -55,6 +55,11 @@ class WebUIConnector
         return $this->sendRequest('/sdapi/v1/loras');
     }
 
+    public function getEmbeddings() : array
+    {
+        return $this->sendRequest('/sdapi/v1/embeddings');
+    }
+
     public function testConnection() : bool
     {
         try {

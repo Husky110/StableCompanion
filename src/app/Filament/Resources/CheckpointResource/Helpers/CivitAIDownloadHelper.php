@@ -46,6 +46,11 @@ class CivitAIDownloadHelper
                                     $fail('The given URL does not represent a LoRA/LyCORIS or LyCON');
                                 }
                                 break;
+                            case CivitAIModelType::EMBEDDING:
+                                if($modeltype != 'TextualInversion'){
+                                    $fail('The given URL does not represent an embedding');
+                                }
+                                break;
                             default:
                                 throw new \Exception('Not implemented');
                                 break;

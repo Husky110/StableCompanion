@@ -97,6 +97,11 @@ class CivitAIConnector
         $meta = self::getModelMetaByID($modelID);
         $retval = [];
         foreach ($meta['modelVersions'] as $modelVersion){
+            if(isset($modelVersion['status'])){
+                if($modelVersion['status'] != 'Published'){
+                    continue;
+                }
+            }
             $retval[$modelVersion['id']] = (str_contains($modelVersion['baseModel'], 'XL') ? 'XL: ' : 'SD: '). $modelVersion['name'];
         }
         krsort($retval);

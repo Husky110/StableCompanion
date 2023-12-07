@@ -60,5 +60,27 @@ class CivitDownload extends Model
         ]);
         $download->save();
         Aria2Connector::sendDownloadToAria2($download);
+        if($modelType == CivitAIModelType::EMBEDDING){ // sometimes we have more than one file and the other one is a negative - or even a positive...
+            $negativeFound = false;
+            if(count($specificModelVersion['files']) > 1 ){
+                for($x = 1; $x <= count($specificModelVersion['files']) - 1; $x++){
+                    if(
+                        $specificModelVersion['files'][$x]['type'] != $specificModelVersion['files'][0]['type'] &&
+                        in_array($specificModelVersion['files'][$x]['type'], ['Model', 'Negative'])
+                    ){
+                        $download = new CivitDownload([
+                            'civit_id' => $modelID,
+                            'version' => $modelVersion,
+                            'type' => strtolower($modelType->name).'_'.(str_contains($specificModelVersion['baseModel'], 'XL') ? 'xl' : 'sd'),
+                            'url' => $specificModelVersion['files'][$x]['downloadUrl'],
+                            'status' => 'pending',
+                            'aria_id' => null,
+                            'load_examples' => $syncExamples
+                        ]);
+                        $download->save();
+                    }
+                }
+            }
+        }
     }
 }

@@ -5,10 +5,10 @@ namespace App\Filament\Resources\CheckpointResource\Helpers;
 use App\Http\Helpers\CivitAIConnector;
 use App\Models\AIImage;
 use App\Models\Checkpoint;
-use App\Models\CheckpointFile;
 use App\Models\CivitDownload;
 use App\Models\DataStructures\CivitAIModelType;
 use App\Models\DataStructures\ModelBaseClassInterface;
+use App\Models\Embedding;
 use App\Models\Lora;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Grid;
@@ -115,6 +115,12 @@ class GeneralFrontendHelper
                         $modelBaseClass = Lora::with(['files', 'activedownloads'])->where('civitai_id', $data['modelID'])->first();
                         if($modelBaseClass == null){
                             Lora::createNewModelFromCivitAI($metaData, $data['sync_tags']);
+                        }
+                        break;
+                    case CivitAIModelType::EMBEDDING:
+                        $modelBaseClass = Embedding::with(['files', 'activedownloads'])->where('civitai_id', $data['modelID'])->first();
+                        if($modelBaseClass == null){
+                            Embedding::createNewModelFromCivitAI($metaData, $data['sync_tags']);
                         }
                         break;
                     default:
@@ -226,6 +232,10 @@ class GeneralFrontendHelper
                 $action->label('Scan lora-files');
                 $action->action(fn() => Lora::checkModelFolderForNewFiles());
                 break;
+            case CivitAIModelType::EMBEDDING:
+                $action->label('Scan embeddings-files');
+                $action->action(fn() => Embedding::checkModelFolderForNewFiles());
+                break;
             default:
                 throw new \Exception('Unknown Modeltype');
         }
@@ -336,5 +346,87 @@ class GeneralFrontendHelper
                 }
             });
         return $action;
+    }
+
+    public static function runLinkingAction(array $data, ModelBaseClassInterface $model) : int
+    {
+        $redirect = 0;
+        $exisitingModel = $model::class::where('civitai_id', $data['modelID'])->first();
+        if($exisitingModel){
+            $redirect = $exisitingModel->id;
+            if($data['remove_duplicates']){
+                foreach ($exisitingModel->files as $existingFile){
+                    foreach ($data['files'] as $linkingLoraFileID => $linkingData){
+                        if($linkingData['version'] == 'custom'){
+                            continue;
+                        }
+                        if($linkingData['version'] == $existingFile->version){
+                            $existingFile->deleteModelFile();
+                            unset($data['files'][$linkingLoraFileID]);
+                            break;
+                        }
+                    }
+                }
+            }
+            foreach ($model->files as $oldFile){
+                $oldFile->base_id = $exisitingModel->id;
+                $oldFile->civitai_version = $data['files'][$oldFile->id]['version'];
+                $modelFileSpecificData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($data['modelID'], $oldFile->civitai_version);
+                $oldFile->civitai_description = $modelFileSpecificData['description'];
+                switch ($model::class){
+                    case Checkpoint::class:
+                        $oldFile->baseModel = $modelFileSpecificData['baseModel'];
+                        $oldFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
+                        break;
+                    case Lora::class:
+                        $oldFile->baseModelType = $modelFileSpecificData['baseModel'];
+                        $oldFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
+                        break;
+                }
+                $oldFile->save();
+            }
+            $model->deleteModel();
+            if($data['sync_tags']){
+                $modelData = CivitAIConnector::getModelMetaByID($exisitingModel->civitai_id);
+                $exisitingModel->syncCivitAITags($modelData);
+            }
+
+        } else {
+            $modelData = CivitAIConnector::getModelMetaByID($data['modelID']);
+            $model->model_name = $modelData['name'];
+            $model->civitai_id = $modelData['id'];
+            $model->setModelImage($modelData);
+            $model->civitai_notes = $modelData['description'];
+            $model->save();
+            if($data['sync_tags']){
+                $model->syncCivitAITags($modelData);
+            }
+            foreach ($model->files as $modelFile){
+                $modelFile->civitai_version = $data['files'][$modelFile->id]['version'];
+                $modelFileSpecificData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($data['modelID'], $modelFile->civitai_version);
+                $modelFile->civitai_description = $modelFileSpecificData['description'];
+                switch ($model::class){
+                    case Checkpoint::class:
+                        $modelFile->baseModel = $modelFileSpecificData['baseModel'];
+                        $modelFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
+                        break;
+                    case Lora::class:
+                    case Embedding::class:
+                        $modelFile->baseModelType = $modelFileSpecificData['baseModel'];
+                        $modelFile->trained_words = isset($modelFileSpecificData['trainedWords']) ? json_encode($modelFileSpecificData['trainedWords'], JSON_UNESCAPED_UNICODE) : null;
+                        break;
+                }
+                $modelFile->save();
+            }
+        }
+        // okay, now we check if we have to load image-files from CivitAI...
+        foreach ($data['files'] as $dataModelFileID => $dataFile){
+            if($dataFile['sync_examples']){
+                //Reload the ModelFile - just in case...
+                $modelFileToChange = $model::class::getModelFileClass()::with(['parentModel'])->findOrFail($dataModelFileID);
+                $modelFileToChange->loadImagesFromCivitAIForThisFile();
+            }
+        }
+        return $redirect;
     }
 }
