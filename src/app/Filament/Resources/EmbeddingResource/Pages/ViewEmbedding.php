@@ -296,8 +296,9 @@ class ViewEmbedding extends ViewRecord
                                                     ])
                                                     ->action(function($data){
                                                         $dbEmbeddingFile = EmbeddingFile::findOrFail($data['embeddingfile_id']);
-                                                        $originalpath = Storage::disk('embeddings')->path($dbEmbeddingFile->filepath);
-                                                        $modifiedPath = $data['file_name'];
+                                                        $disk = Storage::disk('embeddings');
+                                                        $originalpath = $disk->path($dbEmbeddingFile->filepath);
+                                                        $modifiedPath = $disk->path('').$data['file_name'];
                                                         rename($originalpath, $modifiedPath);
                                                         $dbEmbeddingFile->filepath = str_replace(Storage::disk('embeddings')->path(''), '', $modifiedPath);
                                                         $dbEmbeddingFile->save();

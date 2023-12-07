@@ -301,8 +301,9 @@ class ViewCheckpoint extends ViewRecord
                                                     })
                                                     ->action(function($data){
                                                         $checkpointFile = CheckpointFile::findOrFail($data['checkpointfile_id']);
-                                                        $originalpath = Storage::disk('checkpoints')->path($checkpointFile->filepath);
-                                                        $modifiedPath = $data['file_name'];
+                                                        $disk = Storage::disk('checkpoints');
+                                                        $originalpath = $disk->path($checkpointFile->filepath);
+                                                        $modifiedPath = $disk->path('').$data['file_name'];
                                                         rename($originalpath, $modifiedPath);
                                                         $checkpointFile->filepath = str_replace(Storage::disk('checkpoints')->path(''), '', $modifiedPath);
                                                         $checkpointFile->save();
