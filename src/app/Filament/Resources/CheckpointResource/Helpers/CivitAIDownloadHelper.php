@@ -14,7 +14,7 @@ use Filament\Forms\Components\Wizard;
 
 class CivitAIDownloadHelper
 {
-    public static function buildURLStep(CivitAIModelType $typeForURL): Wizard\Step
+    public static function buildURLStep(CivitAIModelType $typeForURL, bool $stepForLinking = false): Wizard\Step
     {
         return Wizard\Step::make('URL')
             ->description('Get the CivitAI-URL')
@@ -56,8 +56,8 @@ class CivitAIDownloadHelper
                                 break;
                         }
                     })
-                    ->hint(function () use ($typeForURL){
-                        if($typeForURL == CivitAIModelType::EMBEDDING){
+                    ->hint(function () use ($typeForURL, $stepForLinking){
+                        if($typeForURL == CivitAIModelType::EMBEDDING && $stepForLinking){
                             return 'There is a known problem with linking Embeddings that have more than one file in the same version! If you are trying this, please delete your local files and reimport the embedding via "Import from CivitAI" in the overview!';
                         } else {
                             return false;

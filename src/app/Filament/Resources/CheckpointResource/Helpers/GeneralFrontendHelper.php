@@ -203,7 +203,7 @@ class GeneralFrontendHelper
     public static function buildCivitAILinkingWizard(ModelBaseClassInterface $oldModel): Wizard
     {
         return Wizard::make([
-            CivitAIDownloadHelper::buildURLStep($oldModel->getCivitAIModelType()),
+            CivitAIDownloadHelper::buildURLStep($oldModel->getCivitAIModelType(), true),
             self::buildCheckpointFileVersionLinkingStep($oldModel),
             Wizard\Step::make('Closure')
                 ->description('Manage Duplicates')
