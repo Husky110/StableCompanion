@@ -281,7 +281,7 @@ class ViewEmbedding extends ViewRecord
                                                 ->getStateUsing($embeddingFile->trained_words ? implode(', ', json_decode($embeddingFile->trained_words, true)) : '')
                                                 ->visible((bool)$embeddingFile->trained_words),
                                             \Filament\Infolists\Components\Actions::make([
-                                                Action::make('rename_embeddingfile')
+                                                Action::make('rename_embeddingfile_'.$embeddingFile->id)
                                                     ->label('Change Filename')
                                                     ->button()
                                                     ->form([
@@ -290,22 +290,19 @@ class ViewEmbedding extends ViewRecord
                                                             ->label(false)
                                                             ->hint('Please make sure you keep the correct the fileextention!')
                                                     ])
-                                                    ->fillForm(function () use ($embeddingFile){
-                                                        $retval = [
-                                                            'embeddingfile_id' => $embeddingFile->id,
-                                                            'file_name' => basename($embeddingFile->filepath)
-                                                        ];
-                                                        return $retval;
-                                                    })
+                                                    ->fillForm([
+                                                        'embeddingfile_id' => $embeddingFile->id,
+                                                        'file_name' => $embeddingFile->filepath
+                                                    ])
                                                     ->action(function($data){
-                                                        $embeddingFile = EmbeddingFile::findOrFail($data['embeddingfile_id']);
-                                                        $originalpath = Storage::disk('embeddings')->path($embeddingFile->filepath);
+                                                        $dbEmbeddingFile = EmbeddingFile::findOrFail($data['embeddingfile_id']);
+                                                        $originalpath = Storage::disk('embeddings')->path($dbEmbeddingFile->filepath);
                                                         $modifiedPath = explode('/', $originalpath);
                                                         $modifiedPath[count($modifiedPath) - 1] = $data['file_name'];
                                                         $modifiedPath = implode('/', $modifiedPath);
                                                         rename($originalpath, $modifiedPath);
-                                                        $embeddingFile->filepath = str_replace(Storage::disk('embeddings')->path(''), '', $modifiedPath);
-                                                        $embeddingFile->save();
+                                                        $dbEmbeddingFile->filepath = str_replace(Storage::disk('embeddings')->path(''), '', $modifiedPath);
+                                                        $dbEmbeddingFile->save();
                                                     }),
                                                 Action::make('delete_embeddingfile')
                                                     ->label('Delete Embeddingfile')

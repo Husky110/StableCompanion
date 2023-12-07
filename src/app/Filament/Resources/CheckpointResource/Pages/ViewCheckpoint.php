@@ -283,7 +283,7 @@ class ViewCheckpoint extends ViewRecord
                                                 ->getStateUsing(fn($record) => $record->trained_words ? implode(', ', json_decode($record->trained_words, true)) : '')
                                                 ->visible(fn($record) => (bool)$record->trained_words),
                                             \Filament\Infolists\Components\Actions::make([
-                                                Action::make('rename_checkpointfile')
+                                                Action::make('rename_checkpointfile_'.$checkpointFile->id)
                                                     ->label('Change Filename')
                                                     ->button()
                                                     ->form([

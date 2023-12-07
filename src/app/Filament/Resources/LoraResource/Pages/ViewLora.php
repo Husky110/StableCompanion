@@ -281,7 +281,7 @@ class ViewLora extends ViewRecord
                                                 ->getStateUsing($loraFile->trained_words ? implode(', ', json_decode($loraFile->trained_words, true)) : '')
                                                 ->visible((bool)$loraFile->trained_words),
                                             \Filament\Infolists\Components\Actions::make([
-                                                Action::make('rename_lorafile')
+                                                Action::make('rename_lorafile_'.$loraFile->id)
                                                     ->label('Change Filename')
                                                     ->button()
                                                     ->form([
