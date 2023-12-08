@@ -55,6 +55,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
 
             ])
-            ->brandName('Stable Companion');
+            ->brandName('Stable Companion')
+            ->homeUrl('/');
     }
 }
