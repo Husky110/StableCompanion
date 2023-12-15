@@ -86,6 +86,7 @@ abstract class ModelFileBaseClass extends Model
 
     public function changePreviewImage(bool $keepOldImage = true, int $aiImageID = 0)
     {
+        //TODO: Run this when a user uploads a new Backgroundimage to a model...
         $disk = Storage::disk($this->diskname);
         $filename = explode('.',$this->filepath);
         unset($filename[count($filename) -1]);
