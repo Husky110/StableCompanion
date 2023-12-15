@@ -36,7 +36,6 @@ class AriaFinishDownloadCommand extends Command
     /**
      * Execute the console command.
      */
-    //TODO: Optimize the whole thing!
     public function handle()
     {
         $ariaID = $this->argument('ariaID');
@@ -53,113 +52,75 @@ class AriaFinishDownloadCommand extends Command
             unlink($downloadPath);
             return;
         }
+        // we're setting a new filename, in case the model-uploader gave the same name twice...
+        $filenameComponents = explode('.', basename($downloadPath));
+        $extension = $filenameComponents[count($filenameComponents) - 1];
+        unset($filenameComponents[count($filenameComponents) - 1]);
+        $filenameComponents[count($filenameComponents) - 1] = $filenameComponents[count($filenameComponents) - 1].'_'.$civitAIDownload->version;
+        $filenameComponents[] = $extension;
+        $newFileName = implode('.', $filenameComponents);
+        $modelFile = null;
+        $filePath = '';
+        $storageSuccessfull = false;
+
         switch ($civitAIDownload->type){
             case 'checkpoint_sd':
-                $filePath = Storage::disk('checkpoints')->path('').'sd/'.$civitAIDownload->civit_id.'_'.$civitAIDownload->version.'_'.basename($downloadPath);
-                if(!is_dir(dirname($filePath))){
-                    mkdir(dirname($filePath));
-                }
-                $this->info($filePath);
+                $filePath = Storage::disk('checkpoints')->path('').'sd/'.$newFileName;
                 if(rename($downloadPath, $filePath)){
-                    $embeddingFile = $this->createCheckpointFile($civitAIDownload, 'sd/'.basename($filePath));
-                    if($civitAIDownload->load_examples){
-                        $embeddingFile->loadImagesFromCivitAIForThisFile();
-                    }
-                    $civitAIDownload->delete();
-                } else {
-                    $civitAIDownload->status = 'error_moving_file';
-                    $civitAIDownload->save();
+                    $modelFile = $this->createCheckpointFile($civitAIDownload, 'sd/'.basename($filePath));
+                    $storageSuccessfull = true;
                 }
                 break;
             case 'checkpoint_xl':
-                $filePath = Storage::disk('checkpoints')->path('').'xl/'.$civitAIDownload->civit_id.'_'.$civitAIDownload->version.'_'.basename($downloadPath);
-                if(!is_dir(dirname($filePath))){
-                    mkdir(dirname($filePath));
-                }
+                $filePath = Storage::disk('checkpoints')->path('').'xl/'.$newFileName;
                 if(rename($downloadPath, $filePath)){
-                    $embeddingFile = $this->createCheckpointFile($civitAIDownload, 'xl/'.basename($filePath));
-                    // loading Images for Checkpoint
-                    if($civitAIDownload->load_examples){
-                        $embeddingFile->loadImagesFromCivitAIForThisFile();
-                    }
-                    $civitAIDownload->delete();
-                } else {
-                    $civitAIDownload->status = 'error_moving_file';
-                    $civitAIDownload->save();
+                    $modelFile = $this->createCheckpointFile($civitAIDownload, 'xl/'.basename($filePath));
+                    $storageSuccessfull = true;
                 }
                 break;
             case 'lora_sd':
-                $filePath = Storage::disk('loras')->path('').'sd/'.$civitAIDownload->civit_id.'_'.$civitAIDownload->version.'_'.basename($downloadPath);
-                if(!is_dir(dirname($filePath))){
-                    mkdir(dirname($filePath));
-                }
+                $filePath = Storage::disk('loras')->path('').'sd/'.$newFileName;
                 if(rename($downloadPath, $filePath)){
-                    $embeddingFile = $this->createLoraFile($civitAIDownload, 'sd/'.basename($filePath));
-                    // loading Images for LoRA
-                    if($civitAIDownload->load_examples){
-                        $embeddingFile->loadImagesFromCivitAIForThisFile();
-                    }
-                    $civitAIDownload->delete();
-                } else {
-                    $civitAIDownload->status = 'error_moving_file';
-                    $civitAIDownload->save();
+                    $modelFile = $this->createLoraFile($civitAIDownload, 'sd/'.basename($filePath));
+                    $storageSuccessfull = true;
                 }
-                break;
             case 'lora_xl':
-                $filePath = Storage::disk('loras')->path('').'xl/'.$civitAIDownload->civit_id.'_'.$civitAIDownload->version.'_'.basename($downloadPath);
-                if(!is_dir(dirname($filePath))){
-                    mkdir(dirname($filePath));
-                }
+                $filePath = Storage::disk('loras')->path('').'xl/'.$newFileName;
                 if(rename($downloadPath, $filePath)){
-                    $embeddingFile = $this->createLoraFile($civitAIDownload, 'xl/'.basename($filePath));
-                    // loading Images for LoRA
-                    if($civitAIDownload->load_examples){
-                        $embeddingFile->loadImagesFromCivitAIForThisFile();
-                    }
-                    $civitAIDownload->delete();
-                } else {
-                    $civitAIDownload->status = 'error_moving_file';
-                    $civitAIDownload->save();
+                    $modelFile = $this->createLoraFile($civitAIDownload, 'xl/'.basename($filePath));
+                    $storageSuccessfull = true;
                 }
                 break;
             case 'embedding_sd':
-                $filePath = Storage::disk('embeddings')->path('').'sd/'.$civitAIDownload->civit_id.'_'.$civitAIDownload->version.'_'.basename($downloadPath);
-                if(!is_dir(dirname($filePath))){
-                    mkdir(dirname($filePath));
-                }
+                $filePath = Storage::disk('embeddings')->path('').'sd/'.$newFileName;
                 if(rename($downloadPath, $filePath)){
-                    $embeddingFile = $this->createEmebeddingFile($civitAIDownload, 'sd/'.basename($filePath));
-                    // loading Images for LoRA
-                    if($civitAIDownload->load_examples){
-                        $embeddingFile->loadImagesFromCivitAIForThisFile();
-                    }
-                    $civitAIDownload->delete();
-                } else {
-                    $civitAIDownload->status = 'error_moving_file';
-                    $civitAIDownload->save();
+                    $modelFile = $this->createEmebeddingFile($civitAIDownload, 'sd/'.basename($filePath));
+                    $storageSuccessfull = true;
                 }
                 break;
             case 'embedding_xl':
-                $filePath = Storage::disk('embeddings')->path('').'xl/'.$civitAIDownload->civit_id.'_'.$civitAIDownload->version.'_'.basename($downloadPath);
-                if(!is_dir(dirname($filePath))){
-                    mkdir(dirname($filePath));
-                }
+                $filePath = Storage::disk('embeddings')->path('').'xl/'.$newFileName;
                 if(rename($downloadPath, $filePath)){
-                    $embeddingFile = $this->createEmebeddingFile($civitAIDownload, 'sd/'.basename($filePath));
-                    // loading Images for LoRA
-                    if($civitAIDownload->load_examples){
-                        $embeddingFile->loadImagesFromCivitAIForThisFile();
-                    }
-                    $civitAIDownload->delete();
-                } else {
-                    $civitAIDownload->status = 'error_moving_file';
-                    $civitAIDownload->save();
+                    $modelFile = $this->createEmebeddingFile($civitAIDownload, 'sd/'.basename($filePath));
+                    $storageSuccessfull = true;
                 }
-                break;
                 break;
             default:
                 return;
         }
+        if(!is_dir(dirname($filePath))){
+            mkdir(dirname($filePath));
+        }
+        if($storageSuccessfull){
+            $civitAIDownload->delete();
+            if($civitAIDownload->load_examples){
+                $modelFile->loadImagesFromCivitAIForThisFile();
+            }
+        } else {
+            $civitAIDownload->status = 'error_moving_file';
+            $civitAIDownload->save();
+        }
+
         $this->info($ariaID);
         $this->info('File imported successfully.');
 
