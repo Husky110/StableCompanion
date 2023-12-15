@@ -66,6 +66,7 @@ abstract class ModelFileBaseClass extends Model
                 break;
             }
         }
+        $this->changePreviewImage();
     }
 
     protected function deleteAllAIImages()
@@ -81,5 +82,45 @@ abstract class ModelFileBaseClass extends Model
         $this->deleteAllAIImages();
         Storage::disk($this->diskname)->delete($this->filepath);
         $this->delete();
+    }
+
+    public function changePreviewImage(bool $keepOldImage = true, int $aiImageID = 0)
+    {
+        $disk = Storage::disk($this->diskname);
+        $filename = explode('.',$this->filepath);
+        unset($filename[count($filename) -1]);
+        $filename = implode('.', $filename).'.preview.png';
+        $imageResource = null;
+        if($aiImageID > 0){
+            $imageResource = imagecreatefromstring(Storage::disk('ai_images')->get(AIImage::findOrFail($aiImageID)->filename));
+        } else {
+            $imageToUse = AIImage::where([
+                ['model_file_type' , '=', static::class],
+                ['model_file_id', '=', $this->id]
+            ])->first();
+            if($imageToUse == null){
+                $imageResource = imagecreatefromstring(Storage::disk('modelimages')->get($this->parentModel->image_name));
+            } else {
+                $imageResource = imagecreatefromstring(Storage::disk('ai_images')->get($imageToUse->filename));
+            }
+        }
+        $imageDestination = imagecreatetruecolor(imagesx($imageResource), imagesy($imageResource));
+        if($disk->exists($filename)){
+            if($keepOldImage == false){
+                imagecopy($imageDestination, $imageResource, 0, 0, 0, 0, imagesx($imageResource), imagesy($imageResource));
+                imagepng($imageDestination, $disk->path($filename));
+                imagedestroy($imageDestination);
+                if($imageResource != null){
+                    imagedestroy($imageResource);
+                }
+            }
+        } else {
+            imagecopy($imageDestination, $imageResource, 0, 0, 0, 0, imagesx($imageResource), imagesy($imageResource));
+            imagepng($imageDestination, $disk->path($filename));
+            imagedestroy($imageDestination);
+            if($imageResource != null){
+                imagedestroy($imageResource);
+            }
+        }
     }
 }
