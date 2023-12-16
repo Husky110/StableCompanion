@@ -105,21 +105,20 @@ abstract class ModelFileBaseClass extends Model
                 $imageResource = imagecreatefromstring(Storage::disk('ai_images')->get($imageToUse->filename));
             }
         }
-        $imageDestination = imagecreatetruecolor(imagesx($imageResource), imagesy($imageResource));
-        if($disk->exists($filename)){
-            if($keepOldImage == false){
+
+        if($imageResource != null){
+            $imageDestination = imagecreatetruecolor(imagesx($imageResource), imagesy($imageResource));
+            if($disk->exists($filename)){
+                if($keepOldImage == false){
+                    imagecopy($imageDestination, $imageResource, 0, 0, 0, 0, imagesx($imageResource), imagesy($imageResource));
+                    imagepng($imageDestination, $disk->path($filename));
+                    imagedestroy($imageDestination);
+                    imagedestroy($imageResource);
+                } // no else
+            } else {
                 imagecopy($imageDestination, $imageResource, 0, 0, 0, 0, imagesx($imageResource), imagesy($imageResource));
                 imagepng($imageDestination, $disk->path($filename));
                 imagedestroy($imageDestination);
-                if($imageResource != null){
-                    imagedestroy($imageResource);
-                }
-            }
-        } else {
-            imagecopy($imageDestination, $imageResource, 0, 0, 0, 0, imagesx($imageResource), imagesy($imageResource));
-            imagepng($imageDestination, $disk->path($filename));
-            imagedestroy($imageDestination);
-            if($imageResource != null){
                 imagedestroy($imageResource);
             }
         }
