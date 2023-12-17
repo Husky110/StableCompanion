@@ -108,45 +108,7 @@ class ViewLora extends ViewRecord
                     Section::make('Metadata')
                         ->columns(3)
                         ->schema([
-                            ImageEntry::make('image_name')
-                                ->disk('modelimages')
-                                ->height(400)
-                                ->label(false)
-                                ->columnSpan(1)
-                                ->action(
-                                    Action::make('change_backgroundimage')
-                                        ->form([
-                                            FileUpload::make('image_replacement')
-                                                ->disk('upload_temp')
-                                                ->image(),
-                                            Toggle::make('overwrite_existing')
-                                                ->label('Overwrite exisiting preview-image')
-                                                ->default(true)
-                                                ->visible($this->record->image_name != 'placeholder.png')
-                                        ])
-                                        ->action(function ($data){
-                                            $oldPreviewWasPlaceholder = false;
-                                            if($data['overwrite_existing']){
-                                                $oldPreviewWasPlaceholder = true;
-                                            }
-                                            $tempDisk = Storage::disk('upload_temp');
-                                            $filename = $data['image_replacement'];
-                                            Storage::disk('modelimages')->put(
-                                                $filename,
-                                                $tempDisk->get($filename)
-                                            );
-                                            if($this->record->image_name == 'placeholder.png'){
-                                                $oldPreviewWasPlaceholder = true;
-                                            }
-                                            $this->record->image_name = $filename;
-                                            $this->record->save();
-                                            // we clear the whole thing, cause we have no idea how many images the user tried here...
-                                            $tempDisk->delete($tempDisk->allFiles());
-                                            foreach ($this->record->files as $file){
-                                                $file->changePreviewImage(!$oldPreviewWasPlaceholder, 0, true);
-                                            }
-                                        })
-                                ),
+                            GeneralFrontendHelper::buildImageEntryForDetailedViews($this->record),
                             Section::make()
                                 ->schema([
                                     TextEntry::make('model_name')

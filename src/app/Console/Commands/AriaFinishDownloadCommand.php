@@ -63,7 +63,7 @@ class AriaFinishDownloadCommand extends Command
         $filePath = '';
         $storageSuccessfull = false;
 
-        switch ($civitAIDownload->type){
+        switch (strtolower($civitAIDownload->type)){
             case 'checkpoint_sd':
                 $filePath = Storage::disk('checkpoints')->path('').'sd/'.$newFileName;
                 if(rename($downloadPath, $filePath)){
@@ -84,6 +84,7 @@ class AriaFinishDownloadCommand extends Command
                     $modelFile = $this->createLoraFile($civitAIDownload, 'sd/'.basename($filePath));
                     $storageSuccessfull = true;
                 }
+                break;
             case 'lora_xl':
                 $filePath = Storage::disk('loras')->path('').'xl/'.$newFileName;
                 if(rename($downloadPath, $filePath)){

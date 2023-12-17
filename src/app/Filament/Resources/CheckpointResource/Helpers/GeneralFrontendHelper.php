@@ -11,6 +11,7 @@ use App\Models\DataStructures\ModelBaseClassInterface;
 use App\Models\Embedding;
 use App\Models\Lora;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Radio;
@@ -23,7 +24,9 @@ use Filament\Forms\Components\ViewField;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Infolists\Components\Actions\Action;
+use Filament\Infolists\Components\ImageEntry;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class GeneralFrontendHelper
@@ -429,5 +432,49 @@ class GeneralFrontendHelper
             }
         }
         return $redirect;
+    }
+
+    public static function buildImageEntryForDetailedViews($record) : ImageEntry
+    {
+        return ImageEntry::make('image_name')
+            ->disk('modelimages')
+            ->height(400)
+            ->label(false)
+            ->columnSpan(1)
+            ->action(
+                Action::make('change_backgroundimage')
+                    ->form([
+                        FileUpload::make('image_replacement')
+                            ->hint('This will also set all model-files preview-images if none is set.')
+                            ->disk('upload_temp')
+                            ->image(),
+                        Toggle::make('overwrite_existing')
+                            ->label('Overwrite exisiting preview-image')
+                            ->default(true)
+                            ->visible($record->image_name != 'placeholder.png')
+                    ])
+                    ->action(function ($data) use ($record){
+                        $oldPreviewWasPlaceholder = false;
+                        if($data['overwrite_existing']){
+                            $oldPreviewWasPlaceholder = true;
+                        }
+                        $tempDisk = Storage::disk('upload_temp');
+                        $filename = $data['image_replacement'];
+                        Storage::disk('modelimages')->put(
+                            $filename,
+                            $tempDisk->get($filename)
+                        );
+                        if($record->image_name == 'placeholder.png'){
+                            $oldPreviewWasPlaceholder = true;
+                        }
+                        $record->image_name = $filename;
+                        $record->save();
+                        // we clear the whole thing, cause we have no idea how many images the user tried here...
+                        $tempDisk->delete($tempDisk->allFiles());
+                        foreach ($record->files as $file){
+                            $file->changePreviewImage(!$oldPreviewWasPlaceholder, 0, true);
+                        }
+                    })
+            );
     }
 }
