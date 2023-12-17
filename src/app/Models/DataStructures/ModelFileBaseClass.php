@@ -66,7 +66,7 @@ abstract class ModelFileBaseClass extends Model
                 break;
             }
         }
-        $this->changePreviewImage();
+        $this->changePreviewImage(true, 0, false);
     }
 
     protected function deleteAllAIImages()
@@ -84,9 +84,8 @@ abstract class ModelFileBaseClass extends Model
         $this->delete();
     }
 
-    public function changePreviewImage(bool $keepOldImage = true, int $aiImageID = 0)
+    public function changePreviewImage(bool $keepOldImage = true, int $aiImageID = 0, bool $forceUseModelImage = false)
     {
-        //TODO: Run this when a user uploads a new Backgroundimage to a model...
         $disk = Storage::disk($this->diskname);
         $filename = explode('.',$this->filepath);
         unset($filename[count($filename) -1]);
@@ -99,11 +98,12 @@ abstract class ModelFileBaseClass extends Model
                 ['model_file_type' , '=', static::class],
                 ['model_file_id', '=', $this->id]
             ])->first();
-            if($imageToUse == null){
-                $imageResource = imagecreatefromstring(Storage::disk('modelimages')->get($this->parentModel->image_name));
-            } else {
-                $imageResource = imagecreatefromstring(Storage::disk('ai_images')->get($imageToUse->filename));
-            }
+        }
+
+        if($imageToUse == null || $forceUseModelImage == true){
+            $imageResource = imagecreatefromstring(Storage::disk('modelimages')->get($this->parentModel->image_name));
+        } else {
+            $imageResource = imagecreatefromstring(Storage::disk('ai_images')->get($imageToUse->filename));
         }
 
         if($imageResource != null){

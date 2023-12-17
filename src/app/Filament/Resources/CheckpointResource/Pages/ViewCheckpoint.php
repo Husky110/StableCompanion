@@ -119,20 +119,31 @@ class ViewCheckpoint extends ViewRecord
                                     Action::make('change_backgroundimage')
                                         ->form([
                                             FileUpload::make('image_replacement')
+                                                ->hint('This will also set all model-files preview-images if none is set.')
                                                 ->disk('upload_temp')
-                                                ->image()
+                                                ->image(),
+                                            Toggle::make('Overwrite exisiting preview-image')
+                                                ->default(true)
+                                                ->visible($this->record->image_name != 'placeholder.png')
                                         ])
                                         ->action(function ($data){
+                                            $oldPreviewWasPlaceholder = false;
                                             $tempDisk = Storage::disk('upload_temp');
                                             $filename = $data['image_replacement'];
                                             Storage::disk('modelimages')->put(
                                                 $filename,
                                                 $tempDisk->get($filename)
                                             );
+                                            if($this->record->image_name == 'placeholder.png'){
+                                                $oldPreviewWasPlaceholder = true;
+                                            }
                                             $this->record->image_name = $filename;
                                             $this->record->save();
                                             // we clear the whole thing, cause we have no idea how many images the user tried here...
                                             $tempDisk->delete($tempDisk->allFiles());
+                                            foreach ($this->record->files as $file){
+                                                $file->changePreviewImage(!$oldPreviewWasPlaceholder, 0, true);
+                                            }
                                         })
                                 ),
                             Section::make()
