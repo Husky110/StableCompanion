@@ -119,12 +119,16 @@ class ViewEmbedding extends ViewRecord
                                             FileUpload::make('image_replacement')
                                                 ->disk('upload_temp')
                                                 ->image(),
-                                            Toggle::make('Overwrite exisiting preview-image')
+                                            Toggle::make('overwrite_existing')
+                                                ->label('Overwrite exisiting preview-image')
                                                 ->default(true)
                                                 ->visible($this->record->image_name != 'placeholder.png')
                                         ])
                                         ->action(function ($data){
                                             $oldPreviewWasPlaceholder = false;
+                                            if($data['overwrite_existing']){
+                                                $oldPreviewWasPlaceholder = true;
+                                            }
                                             $tempDisk = Storage::disk('upload_temp');
                                             $filename = $data['image_replacement'];
                                             Storage::disk('modelimages')->put(
