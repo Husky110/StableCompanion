@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Filament\Resources\CheckpointResource\Helpers\CivitAIDownloadHelper;
 use App\Http\Helpers\Aria2Connector;
 use App\Http\Helpers\CivitAIConnector;
 use App\Models\AIImage;
@@ -52,55 +53,47 @@ class AriaFinishDownloadCommand extends Command
             unlink($downloadPath);
             return;
         }
-        // we're setting a new filename, in case the model-uploader gave the same name twice...
-        $filenameComponents = explode('.', basename($downloadPath));
-        $extension = $filenameComponents[count($filenameComponents) - 1];
-        unset($filenameComponents[count($filenameComponents) - 1]);
-        $filenameComponents[count($filenameComponents) - 1] = $filenameComponents[count($filenameComponents) - 1].'_'.$civitAIDownload->version;
-        $filenameComponents[] = $extension;
-        $newFileName = implode('.', $filenameComponents);
         $modelFile = null;
-        $filePath = '';
         $storageSuccessfull = false;
 
         switch (strtolower($civitAIDownload->type)){
             case 'checkpoint_sd':
-                $filePath = Storage::disk('checkpoints')->path('').'sd/'.$newFileName;
+                $filePath = CivitAIDownloadHelper::generateFileNameForDownloadedModel(basename($downloadPath), Storage::disk('checkpoints')->path('').'sd/'.basename($downloadPath));
                 if(rename($downloadPath, $filePath)){
                     $modelFile = $this->createCheckpointFile($civitAIDownload, 'sd/'.basename($filePath));
                     $storageSuccessfull = true;
                 }
                 break;
             case 'checkpoint_xl':
-                $filePath = Storage::disk('checkpoints')->path('').'xl/'.$newFileName;
+                $filePath = CivitAIDownloadHelper::generateFileNameForDownloadedModel(basename($downloadPath), Storage::disk('checkpoints')->path('').'xl/'.basename($downloadPath));
                 if(rename($downloadPath, $filePath)){
                     $modelFile = $this->createCheckpointFile($civitAIDownload, 'xl/'.basename($filePath));
                     $storageSuccessfull = true;
                 }
                 break;
             case 'lora_sd':
-                $filePath = Storage::disk('loras')->path('').'sd/'.$newFileName;
+                $filePath = CivitAIDownloadHelper::generateFileNameForDownloadedModel(basename($downloadPath), Storage::disk('loras')->path('').'sd/'.basename($downloadPath));
                 if(rename($downloadPath, $filePath)){
                     $modelFile = $this->createLoraFile($civitAIDownload, 'sd/'.basename($filePath));
                     $storageSuccessfull = true;
                 }
                 break;
             case 'lora_xl':
-                $filePath = Storage::disk('loras')->path('').'xl/'.$newFileName;
+                $filePath = CivitAIDownloadHelper::generateFileNameForDownloadedModel(basename($downloadPath), Storage::disk('loras')->path('').'xl/'.basename($downloadPath));
                 if(rename($downloadPath, $filePath)){
                     $modelFile = $this->createLoraFile($civitAIDownload, 'xl/'.basename($filePath));
                     $storageSuccessfull = true;
                 }
                 break;
             case 'embedding_sd':
-                $filePath = Storage::disk('embeddings')->path('').'sd/'.$newFileName;
+                $filePath = CivitAIDownloadHelper::generateFileNameForDownloadedModel(basename($downloadPath), Storage::disk('embeddings')->path('').'sd/'.basename($downloadPath));
                 if(rename($downloadPath, $filePath)){
                     $modelFile = $this->createEmebeddingFile($civitAIDownload, 'sd/'.basename($filePath));
                     $storageSuccessfull = true;
                 }
                 break;
             case 'embedding_xl':
-                $filePath = Storage::disk('embeddings')->path('').'xl/'.$newFileName;
+                $filePath = CivitAIDownloadHelper::generateFileNameForDownloadedModel(basename($downloadPath), Storage::disk('embeddings')->path('').'xl/'.basename($downloadPath));
                 if(rename($downloadPath, $filePath)){
                     $modelFile = $this->createEmebeddingFile($civitAIDownload, 'sd/'.basename($filePath));
                     $storageSuccessfull = true;

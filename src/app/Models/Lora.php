@@ -46,17 +46,7 @@ class Lora extends ModelBaseClass implements ModelBaseClassInterface
 
     function checkIfOtherVersionsExistOnCivitAi(): array
     {
-        if($this->civitai_id == null){
-            return [];
-        }
-        $metaData = CivitAIConnector::getModelMetaByID($this->civitai_id);
-        $versionsNotInCollection = [];
-        foreach ($metaData['modelVersions'] as $modelVersion){
-            if(LoraFile::where('civitai_version', $modelVersion['id'])->count() == 0){
-                $versionsNotInCollection[$modelVersion['id']] = $modelVersion['name'];
-            }
-        }
-        return $versionsNotInCollection;
+        return parent::queueCivitAIForOtherVersionsOfThisModel(LoraFile::class);
     }
 
     public static function createNewModelFromCivitAI(array $civitAIModelData, bool $syncTags): static

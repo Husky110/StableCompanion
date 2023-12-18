@@ -3,6 +3,7 @@
 namespace App\Models\DataStructures;
 
 use App\Http\Helpers\CivitAIConnector;
+use App\Http\Helpers\GeneralHelper;
 use App\Models\AIImage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -80,16 +81,19 @@ abstract class ModelFileBaseClass extends Model
     public function deleteModelFile()
     {
         $this->deleteAllAIImages();
-        Storage::disk($this->diskname)->delete($this->filepath);
+        $disk = Storage::disk($this->diskname);
+        $disk->delete($this->filepath);
+        $filePathForPreviewImage = GeneralHelper::getFilePathWithoutExtension($this->filepath).'.preview.png';
+        if($disk->exists($filePathForPreviewImage)){
+            $disk->delete($filePathForPreviewImage);
+        }
         $this->delete();
     }
 
     public function changePreviewImage(bool $keepOldImage = true, int $aiImageID = 0, bool $forceUseModelImage = false)
     {
         $disk = Storage::disk($this->diskname);
-        $filename = explode('.',$this->filepath);
-        unset($filename[count($filename) -1]);
-        $filename = implode('.', $filename).'.preview.png';
+        $filename = GeneralHelper::getFilePathWithoutExtension($this->filepath).'.preview.png';
         $imageResource = null;
         if($aiImageID > 0){
             $imageResource = imagecreatefromstring(Storage::disk('ai_images')->get(AIImage::findOrFail($aiImageID)->filename));
@@ -124,3 +128,4 @@ abstract class ModelFileBaseClass extends Model
         }
     }
 }
+

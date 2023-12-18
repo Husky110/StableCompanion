@@ -11,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Forms\Components\Wizard;
+use Illuminate\Filesystem\Filesystem;
 
 class CivitAIDownloadHelper
 {
@@ -99,5 +100,21 @@ class CivitAIDownloadHelper
                     ->default(true)
                     ->hint('The CivitAI-API provides up to 10 images. We sync only images and only those that have complete informations.'),
             ]);
+    }
+
+    public static function generateFileNameForDownloadedModel(string $sourceFilename, string $destinationPath) : string
+    {
+        // we're taking the standard-filename, but we check if that already exists. If so - we modify that, so that there are no conflicts
+        // this can happen if the modeluploader gave the same filename multiple times...
+        if(file_exists($destinationPath)){
+            $sourceFileComponents = explode('.', $sourceFilename);
+            $fileExtention = $sourceFileComponents[count($sourceFileComponents) - 1];
+            unset($sourceFileComponents[count($sourceFileComponents) - 1]);
+            $sourceFileComponents[count($sourceFileComponents) - 1] .= '_'.time();
+            $newSourceFilename = implode('.', $sourceFileComponents).'.'.$fileExtention;
+            return str_replace($sourceFilename, $newSourceFilename, $destinationPath);
+        } else {
+            return $destinationPath;
+        }
     }
 }

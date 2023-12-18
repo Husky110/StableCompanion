@@ -77,6 +77,9 @@ abstract class ModelBaseClass extends Model
         }
         $metaData = CivitAIConnector::getModelMetaByID($this->civitai_id);
         $versionsNotInCollection = [];
+        if(isset($metaData['modelVersions']) == false){
+            return []; // well - civitai not reachable...
+        }
         foreach ($metaData['modelVersions'] as $modelVersion){
             if($modelFileClass::where('civitai_version', $modelVersion['id'])->count() == 0){
                 $versionsNotInCollection[$modelVersion['id']] = $modelVersion['name'];
