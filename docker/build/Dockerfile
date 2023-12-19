@@ -40,7 +40,12 @@ RUN ln -s /usr/bin/php81 /usr/bin/php
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
 # Configure nginx
-COPY /files/nginx.conf /etc/nginx/nginx.conf
+RUN mkdir /nginx
+COPY /files/nginx.conf /nginx/nginx.conf
+COPY /files/nginx-password.conf /nginx/nginx-password.conf
+ARG PASSNGINX=0
+RUN if [[ "$PASSNGINX" = 0 ]]  ; then cp /nginx/nginx.conf /etc/nginx/nginx.conf ; else cp /nginx/nginx-password.conf /etc/nginx/nginx.conf; fi
+RUN rm -rf /nginx
 
 # Configure PHP-FPM
 COPY /files/fpm-pool.conf /etc/php81/php-fpm.d/www.conf

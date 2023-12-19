@@ -77,6 +77,7 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 
 ### Usage
   There are some "rules" you should follow when using StableCompanion. Here they are:
+- SC is meant to run on your local machine! That is the reason why I've removed any login- and logout-resources and there is no password. If you want to run SC on a server or in a LAN with multiple people having access - create a new .htpasswd-file within the /src-directory and whenever you need to run `docker compose build`, run it like this: `docker compose build --build-arg PASSNGINX="1"`.
 - Do NOT rename files within the checkpoints-, loras- or embedding-directory (that also includes changing file-extensions)! SC will detect them as "new" files which will lead to duplicates in the database! There is a feature in SC for doing that!
 - SC does create the folders "sd" and "xl" inside your checkpoint-, lora- and embedding-volumes. This is done to provide a file-separation for regular models and Xl-stuff. That behaviour might lead to confusing lists inside A1111 or whatever you are using. 
 - When you import a checkpoint, lora, or embedding from CivitAI - SC will try to keep the original-filename. If the model-uploader gave the same filename multiple times, SC will append the current timestamp to the filename. This might change prompting behavior!
