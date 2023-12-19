@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources\CheckpointResource\Pages;
 
+use App\Filament\Helpers\GeneralFrontendHelper;
 use App\Filament\Resources\CheckpointResource;
-use App\Filament\Resources\CheckpointResource\Helpers\GeneralFrontendHelper;
 use App\Models\DataStructures\CivitAIModelType;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
+
 class ListCheckpoints extends ListRecords
 {
     protected static string $resource = CheckpointResource::class;

@@ -2,7 +2,8 @@
 
 namespace App\Filament\Resources\EmbeddingResource\Pages;
 
-use App\Filament\Resources\CheckpointResource\Helpers\GeneralFrontendHelper;
+use App\Filament\Helpers\GeneralFrontendHelper;
+use App\Filament\Helpers\ViewModelHelper;
 use App\Filament\Resources\EmbeddingResource;
 use App\Http\Helpers\CivitAIConnector;
 use App\Models\CivitDownload;
@@ -10,7 +11,6 @@ use App\Models\DataStructures\CivitAIModelType;
 use App\Models\Embedding;
 use App\Models\EmbeddingFile;
 use Filament\Actions;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -58,45 +58,8 @@ class ViewEmbedding extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('link_to_civitai')
-                ->label('Link this Embedding to CivitAI-Model')
-                ->modalDescription('Beware: You do this on your own accountability! If you link this to a wrong model, that\'s on you! I can\'t really check that what you do here is correct. If you add an URL of an already existing model, it will be linked to that. (Sorry - can\'t really put a Embedding-Selector here...)')
-                ->button()
-                ->visible(!(bool)$this->record->civitai_id)
-                ->form([GeneralFrontendHelper::buildCivitAILinkingWizard($this->record)])
-                ->action(function ($data){
-                    $redirect = GeneralFrontendHelper::runLinkingAction($data, $this->record);
-                    if($redirect > 0){
-                        $this->redirect('/embeddings/'.$redirect);
-                    }
-                })
-                ->modalSubmitAction(false)
-                ->modalCancelAction(false),
-            Actions\Action::make('download_additional_versions')
-                ->label('Download additional versions')
-                ->button()
-                ->modalDescription('With this you can add other/older versions of this model to your collection.')
-                ->form(function ($record){
-                    return [
-                        Select::make('versions')
-                            ->label('Pick your versions')
-                            ->multiple()
-                            ->options($record->checkIfOtherVersionsExistOnCivitAi()),
-                        Toggle::make('sync_images')
-                            ->label('Sync example-images'),
-                    ];
-                })
-                ->action(function ($data){
-                    foreach ($data['versions'] as $version){
-                        CivitDownload::downloadFileFromCivitAI(
-                            CivitAIModelType::EMBEDDING,
-                            $this->record->civitai_id,
-                            $version,
-                            $data['sync_images']
-                        );
-                    }
-                })
-                ->visible(fn($record) => count($record->checkIfOtherVersionsExistOnCivitAi()) > 0)
+            ViewModelHelper::buildCivitAILinkingAction($this->record),
+            ViewModelHelper::buildDownloadAdditionalVersionsAction($this->record),
         ];
     }
 
@@ -119,75 +82,12 @@ class ViewEmbedding extends ViewRecord
                                         ->inlineLabel()
                                         ->getStateUsing(fn($record) => new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($record->civitai_id).'" target="_blank">'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($record->civitai_id).'</a>'))
                                         ->visible(fn($record) => $record->civitai_id != null),
-                                    \Filament\Infolists\Components\Actions::make([
-                                        Action::make('change_embeddingname')
-                                            ->label('Change Embeddingname')
-                                            ->button()
-                                            ->form([
-                                                TextInput::make('model_name')
-                                                    ->label(false)
-                                                    ->default($this->record->model_name)
-                                            ])
-                                            ->action(function ($data){
-                                                $this->record->model_name = $data['model_name'];
-                                                $this->record->save();
-                                            }),
-                                    ])
-                                        ->fullWidth(),
+                                    ViewModelHelper::buildChangeNameAction($this->record),
                                     Section::make('Tags')
                                         ->extraAttributes(['style' => 'max-height: 200px; overflow-y: scroll;'])
-                                        ->schema(function (){
-                                            $schema = [
-                                                TextEntry::make('tags.tagname')
-                                                    ->label(false)
-                                            ];
-                                            $schema[] = \Filament\Infolists\Components\Actions::make([
-                                                Action::make('manage_tags')
-                                                    ->label('Manage Tags')
-                                                    ->button()
-                                                    ->modalHeading('Manage Tags')
-                                                    ->fillForm([$this->record])
-                                                    ->form([
-                                                        Repeater::make('embeddingTags')
-                                                            ->label(false)
-                                                            ->relationship()
-                                                            ->schema([
-                                                                Select::make('tag_id')
-                                                                    ->relationship('tag', 'tagname')
-                                                            ])
-                                                            ->addActionLabel('Add tag')
-                                                            ->grid(3)
-                                                    ]),
-                                            ])->columnSpan(3)->fullWidth();
-                                            return $schema;
-                                        }),
+                                        ->schema(ViewModelHelper::buildTagManagement($this->record)),
                                     Section::make('Your Notes')
-                                        ->schema([
-                                            TextEntry::make('user_notes')
-                                                ->getStateUsing(fn() => $this->record->user_notes ? GeneralFrontendHelper::wrapHTMLStringToImplementBreaks($this->record->user_notes) : 'You noted nothing so far...')
-                                                ->label(false),
-                                            \Filament\Infolists\Components\Actions::make([
-                                                Action::make('change_usernotes')
-                                                    ->form([
-                                                        RichEditor::make('notes')
-                                                            ->label(false)
-                                                            ->default($this->record->user_notes)
-                                                    ])
-                                                    ->action(function($data){
-                                                        $this->record->user_notes = $data['notes'];
-                                                        $this->record->save();
-                                                    }),
-                                                Action::make('clear_usernotes')
-                                                    ->requiresConfirmation()
-                                                    ->label('Clear usernotes')
-                                                    ->button()
-                                                    ->color('danger')
-                                                    ->action(function (){
-                                                        $this->record->user_notes = null;
-                                                        $this->record->save();
-                                                    })
-                                            ])->fullWidth()
-                                        ]),
+                                        ->schema(ViewModelHelper::buildUserNoteManagement($this->record)),
                                     Section::make('CivitAI-Description')
                                         ->schema([
                                             TextEntry::make('civitai_notes')
@@ -232,74 +132,7 @@ class ViewEmbedding extends ViewRecord
                             Section::make('Metadata')
                                 ->schema([
                                     Section::make()
-                                        ->schema([
-                                            TextEntry::make('filepath')
-                                                ->inlineLabel()
-                                                ->label('FilePath:')
-                                                ->getStateUsing($embeddingFile->filepath),
-                                            TextEntry::make('version_name')
-                                                ->label('Version:')
-                                                ->inlineLabel()
-                                                ->getStateUsing($embeddingFile->version_name)
-                                                ->visible((bool)$embeddingFile->version_name),
-                                            TextEntry::make('civitai_version')
-                                                ->label('CivitAI-Version-ID/-Link')
-                                                ->inlineLabel()
-                                                ->getStateUsing($embeddingFile->civitai_version ? new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($this->record->civitai_id, $embeddingFile->civitai_version).'" target="_blank">'.$embeddingFile->civitai_version.'</a>') : '')
-                                                ->visible((bool)$embeddingFile->civitai_version),
-                                            TextEntry::make('baseModelType')
-                                                ->inlineLabel()
-                                                ->label('Base Model:')
-                                                ->getStateUsing($embeddingFile->baseModelType),
-                                            TextEntry::make('trained_words')
-                                                ->label('Trained words:')
-                                                ->inlineLabel()
-                                                ->getStateUsing($embeddingFile->trained_words ? implode(', ', json_decode($embeddingFile->trained_words, true)) : '')
-                                                ->visible((bool)$embeddingFile->trained_words),
-                                            \Filament\Infolists\Components\Actions::make([
-                                                Action::make('rename_embeddingfile_'.$embeddingFile->id)
-                                                    ->label('Change Filename')
-                                                    ->button()
-                                                    ->form([
-                                                        Hidden::make('embeddingfile_id'),
-                                                        TextInput::make('file_name')
-                                                            ->label(false)
-                                                            ->hint('Please make sure you keep the correct the fileextention!')
-                                                    ])
-                                                    ->fillForm([
-                                                        'embeddingfile_id' => $embeddingFile->id,
-                                                        'file_name' => $embeddingFile->filepath
-                                                    ])
-                                                    ->action(function($data){
-                                                        $dbEmbeddingFile = EmbeddingFile::findOrFail($data['embeddingfile_id']);
-                                                        $disk = Storage::disk('embeddings');
-                                                        $originalpath = $disk->path($dbEmbeddingFile->filepath);
-                                                        $modifiedPath = $disk->path('').$data['file_name'];
-                                                        rename($originalpath, $modifiedPath);
-                                                        $dbEmbeddingFile->filepath = str_replace(Storage::disk('embeddings')->path(''), '', $modifiedPath);
-                                                        $dbEmbeddingFile->save();
-                                                    }),
-                                                Action::make('delete_embeddingfile')
-                                                    ->label('Delete Embeddingfile')
-                                                    ->button()
-                                                    ->color('danger')
-                                                    ->requiresConfirmation()
-                                                    ->modalDescription('If this is the last file in that embedding, the embedding will also be deleted. Are you sure you would like to do this?')
-                                                    ->form([Hidden::make('embedding_file_id')])
-                                                    ->fillForm(['embedding_file_id' => $embeddingFile->id])
-                                                    ->action(function ($data){
-                                                        $embeddingFile = EmbeddingFile::with(['images'])->findOrFail($data['embedding_file_id']);
-                                                        $embeddingID = $embeddingFile->base_id;
-                                                        $embeddingFile->deleteModelFile();
-                                                        $embedding = Embedding::with(['files'])->findOrFail($embeddingID);
-                                                        if($embedding->files->count() == 0){
-                                                            $embedding->deleteModel();
-                                                            $this->redirect(route('filament.admin.resources.embeddings.index'));
-                                                        }
-
-                                                    })
-                                            ])->fullWidth(),
-                                        ]),
+                                        ->schema(ViewModelHelper::buildModelFileMetaData($embeddingFile)),
                                     Section::make('CivitAI-Description')
                                         ->schema([
                                             TextEntry::make('civitai_notes')

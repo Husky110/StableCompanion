@@ -2,7 +2,8 @@
 
 namespace App\Filament\Resources\LoraResource\Pages;
 
-use App\Filament\Resources\CheckpointResource\Helpers\GeneralFrontendHelper;
+use App\Filament\Helpers\GeneralFrontendHelper;
+use App\Filament\Helpers\ViewModelHelper;
 use App\Filament\Resources\LoraResource;
 use App\Http\Helpers\CivitAIConnector;
 use App\Models\CivitDownload;
@@ -10,7 +11,6 @@ use App\Models\DataStructures\CivitAIModelType;
 use App\Models\Lora;
 use App\Models\LoraFile;
 use Filament\Actions;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -58,45 +58,8 @@ class ViewLora extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('link_to_civitai')
-                ->label('Link this LoRA to CivitAI-Model')
-                ->modalDescription('Beware: You do this on your own accountability! If you link this to a wrong model, that\'s on you! I can\'t really check that what you do here is correct. If you add an URL of an already existing model, it will be linked to that. (Sorry - can\'t really put a LoRA-Selector here...)')
-                ->button()
-                ->visible(!(bool)$this->record->civitai_id)
-                ->form([GeneralFrontendHelper::buildCivitAILinkingWizard($this->record)])
-                ->action(function ($data){
-                    $redirect = GeneralFrontendHelper::runLinkingAction($data, $this->record);
-                    if($redirect > 0){
-                        $this->redirect('/loras/'.$redirect);
-                    }
-                })
-                ->modalSubmitAction(false)
-                ->modalCancelAction(false),
-            Actions\Action::make('download_additional_versions')
-                ->label('Download additional versions')
-                ->button()
-                ->modalDescription('With this you can add other/older versions of this model to your collection.')
-                ->form(function ($record){
-                    return [
-                        Select::make('versions')
-                            ->label('Pick your versions')
-                            ->multiple()
-                            ->options($record->checkIfOtherVersionsExistOnCivitAi()),
-                        Toggle::make('sync_images')
-                            ->label('Sync example-images'),
-                    ];
-                })
-                ->action(function ($data){
-                    foreach ($data['versions'] as $version){
-                        CivitDownload::downloadFileFromCivitAI(
-                            CivitAIModelType::LORA,
-                            $this->record->civitai_id,
-                            $version,
-                            $data['sync_images']
-                        );
-                    }
-                })
-                ->visible(fn($record) => count($record->checkIfOtherVersionsExistOnCivitAi()) > 0)
+            ViewModelHelper::buildCivitAILinkingAction($this->record),
+            ViewModelHelper::buildDownloadAdditionalVersionsAction($this->record),
         ];
     }
 
@@ -119,75 +82,12 @@ class ViewLora extends ViewRecord
                                         ->inlineLabel()
                                         ->getStateUsing(fn($record) => new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($record->civitai_id).'" target="_blank">'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($record->civitai_id).'</a>'))
                                         ->visible(fn($record) => $record->civitai_id != null),
-                                    \Filament\Infolists\Components\Actions::make([
-                                        Action::make('change_loraname')
-                                            ->label('Change Loraname')
-                                            ->button()
-                                            ->form([
-                                                TextInput::make('model_name')
-                                                    ->label(false)
-                                                    ->default($this->record->model_name)
-                                            ])
-                                            ->action(function ($data){
-                                                $this->record->model_name = $data['model_name'];
-                                                $this->record->save();
-                                            }),
-                                    ])
-                                        ->fullWidth(),
+                                    ViewModelHelper::buildChangeNameAction($this->record),
                                     Section::make('Tags')
                                         ->extraAttributes(['style' => 'max-height: 200px; overflow-y: scroll;'])
-                                        ->schema(function (){
-                                            $schema = [
-                                                TextEntry::make('tags.tagname')
-                                                    ->label(false)
-                                            ];
-                                            $schema[] = \Filament\Infolists\Components\Actions::make([
-                                                Action::make('manage_tags')
-                                                    ->label('Manage Tags')
-                                                    ->button()
-                                                    ->modalHeading('Manage Tags')
-                                                    ->fillForm([$this->record])
-                                                    ->form([
-                                                        Repeater::make('loraTags')
-                                                            ->label(false)
-                                                            ->relationship()
-                                                            ->schema([
-                                                                Select::make('tag_id')
-                                                                    ->relationship('tag', 'tagname')
-                                                            ])
-                                                            ->addActionLabel('Add tag')
-                                                            ->grid(3)
-                                                    ]),
-                                            ])->columnSpan(3)->fullWidth();
-                                            return $schema;
-                                        }),
+                                        ->schema(ViewModelHelper::buildTagManagement($this->record)),
                                     Section::make('Your Notes')
-                                        ->schema([
-                                            TextEntry::make('user_notes')
-                                                ->getStateUsing(fn() => $this->record->user_notes ? GeneralFrontendHelper::wrapHTMLStringToImplementBreaks($this->record->user_notes) : 'You noted nothing so far...')
-                                                ->label(false),
-                                            \Filament\Infolists\Components\Actions::make([
-                                                Action::make('change_usernotes')
-                                                    ->form([
-                                                        RichEditor::make('notes')
-                                                            ->label(false)
-                                                            ->default($this->record->user_notes)
-                                                    ])
-                                                    ->action(function($data){
-                                                        $this->record->user_notes = $data['notes'];
-                                                        $this->record->save();
-                                                    }),
-                                                Action::make('clear_usernotes')
-                                                    ->requiresConfirmation()
-                                                    ->label('Clear usernotes')
-                                                    ->button()
-                                                    ->color('danger')
-                                                    ->action(function (){
-                                                        $this->record->user_notes = null;
-                                                        $this->record->save();
-                                                    })
-                                            ])->fullWidth()
-                                        ]),
+                                        ->schema(ViewModelHelper::buildUserNoteManagement($this->record)),
                                     Section::make('CivitAI-Description')
                                         ->schema([
                                             TextEntry::make('civitai_notes')
@@ -232,77 +132,7 @@ class ViewLora extends ViewRecord
                             Section::make('Metadata')
                                 ->schema([
                                     Section::make()
-                                        ->schema([
-                                            TextEntry::make('filepath')
-                                                ->inlineLabel()
-                                                ->label('FilePath:')
-                                                ->getStateUsing($loraFile->filepath),
-                                            TextEntry::make('version_name')
-                                                ->label('Version:')
-                                                ->inlineLabel()
-                                                ->getStateUsing($loraFile->version_name)
-                                                ->visible((bool)$loraFile->version_name),
-                                            TextEntry::make('civitai_version')
-                                                ->label('CivitAI-Version-ID/-Link')
-                                                ->inlineLabel()
-                                                ->getStateUsing($loraFile->civitai_version ? new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($this->record->civitai_id, $loraFile->civitai_version).'" target="_blank">'.$loraFile->civitai_version.'</a>') : '')
-                                                ->visible((bool)$loraFile->civitai_version),
-                                            TextEntry::make('baseModelType')
-                                                ->inlineLabel()
-                                                ->label('Base Model:')
-                                                ->getStateUsing($loraFile->baseModelType),
-                                            TextEntry::make('trained_words')
-                                                ->label('Trained words:')
-                                                ->inlineLabel()
-                                                ->getStateUsing($loraFile->trained_words ? implode(', ', json_decode($loraFile->trained_words, true)) : '')
-                                                ->visible((bool)$loraFile->trained_words),
-                                            \Filament\Infolists\Components\Actions::make([
-                                                Action::make('rename_lorafile_'.$loraFile->id)
-                                                    ->label('Change Filename')
-                                                    ->button()
-                                                    ->form([
-                                                        Hidden::make('lorafile_id'),
-                                                        TextInput::make('file_name')
-                                                            ->label(false)
-                                                            ->hint('Please make sure you keep the correct the fileextention!')
-                                                    ])
-                                                    ->fillForm(function () use ($loraFile){
-                                                        $retval = [
-                                                            'lorafile_id' => $loraFile->id,
-                                                            'file_name' => basename($loraFile->filepath)
-                                                        ];
-                                                        return $retval;
-                                                    })
-                                                    ->action(function($data){
-                                                        $loraFile = LoraFile::findOrFail($data['lorafile_id']);
-                                                        $disk = Storage::disk('loras');
-                                                        $originalpath = $disk->path($loraFile->filepath);
-                                                        $modifiedPath = $disk->path('').$data['file_name'];
-                                                        rename($originalpath, $modifiedPath);
-                                                        $loraFile->filepath = str_replace(Storage::disk('loras')->path(''), '', $modifiedPath);
-                                                        $loraFile->save();
-                                                    }),
-                                                Action::make('delete_lorafile')
-                                                    ->label('Delete Lorafile')
-                                                    ->button()
-                                                    ->color('danger')
-                                                    ->requiresConfirmation()
-                                                    ->modalDescription('If this is the last file in that lora, the lora will also be deleted. Are you sure you would like to do this?')
-                                                    ->form([Hidden::make('lora_file_id')])
-                                                    ->fillForm(['lora_file_id' => $loraFile->id])
-                                                    ->action(function ($data){
-                                                        $loraFile = LoraFile::with(['images'])->findOrFail($data['lora_file_id']);
-                                                        $loraID = $loraFile->base_id;
-                                                        $loraFile->deleteModelFile();
-                                                        $lora = Lora::with(['files'])->findOrFail($loraID);
-                                                        if($lora->files->count() == 0){
-                                                            $lora->deleteModel();
-                                                            $this->redirect(route('filament.admin.resources.loras.index'));
-                                                        }
-
-                                                    })
-                                            ])->fullWidth(),
-                                        ]),
+                                        ->schema(ViewModelHelper::buildModelFileMetaData($loraFile)),
                                     Section::make('CivitAI-Description')
                                         ->schema([
                                             TextEntry::make('civitai_notes')

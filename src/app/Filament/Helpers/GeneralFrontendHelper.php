@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\CheckpointResource\Helpers;
+namespace App\Filament\Helpers;
 
 use App\Http\Helpers\CivitAIConnector;
 use App\Models\AIImage;
@@ -173,57 +173,6 @@ class GeneralFrontendHelper
                             Submit
                         </x-filament::button>
         BLADE));
-    }
-
-    private static function buildCheckpointFileVersionLinkingStep(ModelBaseClassInterface $oldModelBaseClass)
-    {
-        return Step::make('Versions')
-            ->description('Link exisiting files')
-            ->schema(function () use ($oldModelBaseClass){
-                $retval = [
-                    Hidden::make('modelID'),
-                    Hidden::make('versions')->live(),
-                ];
-                foreach ($oldModelBaseClass->files as $modelFiles){
-                    $retval[] =
-                        Section::make(basename($modelFiles->filepath))
-                            ->schema([
-                                Select::make('files.'.$modelFiles->id.'.version')
-                                    ->label('Select Version')
-                                    ->options(function ($get){
-                                        $knownVersions = json_decode($get('versions'), true);
-                                        $knownVersions['custom'] = 'Old / Custom version';
-                                        return $knownVersions;
-                                    })
-                                    ->required()
-                                    ->hint('Sorting is newest to oldest.'),
-                                Toggle::make('files.'.$modelFiles->id.'.sync_examples')
-                                    ->label('Download example-images')
-                                    ->default(true)
-                                    ->hint('The CivitAI-API provides up to 10 images. We sync only images and only those that have complete informations.'),
-                            ]);
-                }
-                return $retval;
-            });
-    }
-
-    public static function buildCivitAILinkingWizard(ModelBaseClassInterface $oldModel): Wizard
-    {
-        return Wizard::make([
-            CivitAIDownloadHelper::buildURLStep($oldModel->getCivitAIModelType(), true),
-            self::buildCheckpointFileVersionLinkingStep($oldModel),
-            Wizard\Step::make('Closure')
-                ->description('Manage Duplicates')
-                ->schema([
-                    Toggle::make('sync_tags')
-                        ->label('Sync Tags')
-                        ->hint('Syncs all tags from CivitAI to this model.')
-                        ->default(true),
-                    Toggle::make('remove_duplicates')
-                        ->label('Delete duplicate Files')
-                        ->hint('Weither to keep duplicates or delete them - also applies to your previous selection (except custom versions), so doublecheck! If active, StableCompanion will keep the already existing file and delete this one.')
-                ])
-        ])->submitAction(GeneralFrontendHelper::getSumbitActionForForms());
     }
 
     public static function buildScanModelFolderAction(CivitAIModelType $modelType) : \Filament\Actions\Action

@@ -2,10 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Filament\Resources\CheckpointResource\Helpers\CivitAIDownloadHelper;
+use App\Filament\Helpers\CivitAIDownloadHelper;
 use App\Http\Helpers\Aria2Connector;
 use App\Http\Helpers\CivitAIConnector;
-use App\Models\AIImage;
 use App\Models\Checkpoint;
 use App\Models\CheckpointFile;
 use App\Models\CivitDownload;

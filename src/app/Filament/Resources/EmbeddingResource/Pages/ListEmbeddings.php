@@ -2,10 +2,9 @@
 
 namespace App\Filament\Resources\EmbeddingResource\Pages;
 
-use App\Filament\Resources\CheckpointResource\Helpers\GeneralFrontendHelper;
+use App\Filament\Helpers\GeneralFrontendHelper;
 use App\Filament\Resources\EmbeddingResource;
 use App\Models\DataStructures\CivitAIModelType;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
 

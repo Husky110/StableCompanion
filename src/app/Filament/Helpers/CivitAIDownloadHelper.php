@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\CheckpointResource\Helpers;
+namespace App\Filament\Helpers;
 
 use App\Http\Helpers\CivitAIConnector;
 use App\Models\DataStructures\CivitAIModelType;
@@ -9,9 +9,8 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Get;
 use Filament\Forms\Components\Wizard;
-use Illuminate\Filesystem\Filesystem;
+use Filament\Forms\Get;
 
 class CivitAIDownloadHelper
 {

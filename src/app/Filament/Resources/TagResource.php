@@ -27,14 +27,6 @@ class TagResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('tagname')
                     ->label('Tagname'),
-                Forms\Components\Group::make([
-                    Forms\Components\Toggle::make('checkpoint_tag')
-                        ->label('Tag can be used for Checkpoints'),
-                    Forms\Components\Toggle::make('lora_tag')
-                        ->label('Tag can be used for LoRAs'),
-                    Forms\Components\Toggle::make('embedding_tag')
-                        ->label('Tag can be used for Embeddings'),
-                ])
             ]);
     }
 
@@ -45,12 +37,6 @@ class TagResource extends Resource
                 Tables\Columns\TextColumn::make('tagname')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\ToggleColumn::make('checkpoint_tag')
-                    ->label('Checkpoint-Tag'),
-                Tables\Columns\ToggleColumn::make('lora_tag')
-                    ->label('LoRA-Tag'),
-                Tables\Columns\ToggleColumn::make('embedding_tag')
-                    ->label('Embedding-Tag'),
             ])
             ->filters([
                 //
@@ -81,6 +67,8 @@ class TagResource extends Resource
     public static function deleteTag(Tag $tag)
     {
         DB::table('checkpoint_tag')->where('tag_id', $tag->id)->delete();
+        DB::table('lora_tag')->where('tag_id', $tag->id)->delete();
+        DB::table('embedding_tag')->where('tag_id', $tag->id)->delete();
         $tag->delete();
     }
 

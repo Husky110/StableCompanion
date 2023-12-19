@@ -31,7 +31,7 @@ class Embedding extends ModelBaseClass implements ModelBaseClassInterface
 
     public function embeddingTags() : HasMany
     {
-        return  $this->hasMany(EmbeddingTag::class, 'embedding_tag');
+        return  $this->hasMany(EmbeddingTag::class, 'embedding_id');
     }
 
     public function files() : HasMany
@@ -71,7 +71,7 @@ class Embedding extends ModelBaseClass implements ModelBaseClassInterface
         foreach ($disk->allFiles() as $file){
             $fileExtention = explode('.', $file);
             $fileExtention = $fileExtention[count($fileExtention) - 1];
-            if(!in_array($fileExtention, ['pt', 'bin'])){
+            if(!in_array($fileExtention, ['pt', 'bin', 'safetensors'])){
                 continue;
             }
             $existingEmbeddingFile = EmbeddingFile::where('filepath', $file)->first();
