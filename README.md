@@ -79,12 +79,12 @@ Plus - technically you can use StableCompanion to also manage your models for Co
   There are some "rules" you should follow when using StableCompanion. Here they are:
 - SC is meant to run on your local machine! That is the reason why I've removed any login- and logout-resources and there is no password. If you want to run SC on a server or in a LAN with multiple people having access - create a new .htpasswd-file within the /src-directory and whenever you need to run `docker compose build`, run it like this: `docker compose build --build-arg PASSNGINX="1"`.
 - Do NOT rename files within the checkpoints-, loras- or embedding-directory (that also includes changing file-extensions)! SC will detect them as "new" files which will lead to duplicates in the database! There is a feature in SC for doing that!
-- SC does create the folders "sd" and "xl" inside your checkpoint-, lora- and embedding-volumes. This is done to provide a file-separation for regular models and Xl-stuff. That behaviour might lead to confusing lists inside A1111 or whatever you are using. 
+- SC does create the folders "sd" and "xl" inside your checkpoint-, lora- and embedding-volumes. This is done to provide a file-separation for regular models and XL-stuff. That behaviour might lead to confusing lists inside A1111 or whatever you are using. 
 - When you import a checkpoint, lora, or embedding from CivitAI - SC will try to keep the original-filename. If the model-uploader gave the same filename multiple times, SC will append the current timestamp to the filename. This might change prompting behavior!
 - Within each folder (checkpoints, loras, embeddings) you can create a directory with the name "no_scan" - StableCompanion scans your files recursively, but EXPLICITLY ignores that directory. In there you can put all your files that are still in training or should not be used by StableCompanion at all.
 - All requests against the CivitAI-API are beeing cached for one hour or until the container is restarted. I just try to play nice here - so please follow suit. If you wanna look for updates - there are buttons for that you can hit once every hour.
 - RTFM and READ THE TEXTS ON SCREEN! I've tried to make you aware of what is happening in every step, so please read what is on screen and make conscious clicks. :)
-- When you do some multistep-process and click on "Submit" it can seem that nothing happens. Just wait a bit! I had to do some wizardry to get the UI I wanted, but it is not very responsive in some instances. :)
+- When you do some multistep-process and click on "Submit" it can seem that nothing happens. Just wait a bit! I had to do some wizardry to get the UI I wanted, but it is not very responsive in some instances. :) When you think "There is really nothing happening for the last 10 seconds..." - click it again.
 - Sometimes, when you download multiple files at once (max. 5) it's possible that they show up as 100%-done in the downloads tab on the first seconds of downloading. This is due to a bug in Aria2. Just wait a bit (10 seconds) if you are unsure.
 
 ## PAQ
@@ -92,12 +92,17 @@ Since there are no "Frequently asked questions" yet I'm doing a "Possible asked 
 - All the talk about "Linking to CivitAI" inside the software - do you send data there? -> Nope. Everything runs locally on your machine. There are downloads, but no uploads!
 - Is there a way to import a specific image from CivitAI? -> Unfortunately the CivitAI-API is borked when it comes to this and so far no one was able to tell me how that should work. I get empty results when I try `https://civitai.com/api/v1/images?postId=123`
 - Can I import all the images of a checkpoint/lora/embedding? -> Nope. StableCompanion relies on the CivitAI-API and that gives me only 10 images max. Plus - see above.
-- When I look at an image - the modelname looks weird and is "unknown" sometimes. Can't you just link the used checkpoint? -> CivitAI only tells me a filename without an extension. You heve to search the model manually. The only exceptions to that are checkpoints - if the image is inside a checkpoint, it should have been made using that checkpoint.
+- When I inspect an example-image - the modelname looks weird and is "unknown" sometimes. Can't you just link the used checkpoint? -> CivitAI only tells me a filename without an extension. You have to search the model manually. The only exceptions to that are checkpoints - if the image is inside a checkpoint, it should have been made using that checkpoint.
+- You've implemented the preview-images, but A1111-WebUI also supports json-files with meta-data. Why don't you do those? -> I don't do them because all the info is in SC and SC is meant to be opened alongside A1111. If you really feel that should be a thing, then make a PR. :)
 - Sometimes Checkpoints and LoRAs have usage tips (like Clip Skip) - where can I find those in SC? -> Unfortunately nowhere. The CivitAI-API does not give me those. For now - I recommend keeping the model-tab open until the model is imported and put those in your user-notes.
 - Will you optimize this for mobile-devices? -> Well - I will not. If you really need that, feel encouraged to make a PR. :)
 - Whenever I import something from CivitAI, the number of downloads in the left menu does not go up. Actually - it does not change at all until I reload or change the page! Why? -> That is one of the weak points of Filament. AFAIK there is no solution to that right now.
 - Will you support downloads from Huggingface or somewhere else aswell? -> Not for now. If you have something from Huggingface or somewhere else, I would recommend to just download the file and put it wherever it belongs on your filesystem.
 - When will feature XYZ be done? -> Well - I do this project just-for-fun and recreation. I still have a family, a job and a life to look after - so I only work on this when I have time.
+
+## Contributing
+If you have a cool idea, feel free to create a fork and a PR-followup. Codingstylewise I do not enforce any strict rules - but I want descriptive function- and variablenames. $x and such are only allowed in counters in a for-loop.  
+I will try to review your PR as soon as I find the time.
 
 ## Troubleshooting
 ### Help - all Image-Files seem to be broken!
