@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Helpers\WebUIConnector;
 use App\Models\Checkpoint;
+use App\Models\Lora;
 use Illuminate\Console\Command;
 
 class ScanFilesCommand extends Command
@@ -26,6 +28,9 @@ class ScanFilesCommand extends Command
      */
     public function handle()
     {
-        Checkpoint::scanCheckpointFolderForNewFiles();
+        if(WebUIConnector::getInstance()->testConnection()){
+            Checkpoint::checkModelFolderForNewFiles();
+            Lora::checkModelFolderForNewFiles();
+        }
     }
 }

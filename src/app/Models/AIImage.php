@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class AIImage extends Model
 {
@@ -14,7 +15,8 @@ class AIImage extends Model
     public $table = 'ai_images';
 
     public $fillable = [
-        'checkpoint_file_id',
+        'model_file_id',
+        'model_file_type',
         'filename',
         'positive',
         'negative',
@@ -24,12 +26,13 @@ class AIImage extends Model
         'seed',
         'initial_size',
         'source',
+        'model_name'
     ];
 
     // Relations
 
-    public function checkpointfile() : BelongsTo
+    public function modelfile() : MorphTo
     {
-        return $this->belongsTo(CheckpointFile::class);
+        return $this->morphTo(__FUNCTION__, 'model_file_type', 'model_file_id');
     }
 }

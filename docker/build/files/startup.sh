@@ -3,7 +3,9 @@ if [ ! -f "/var/www/database/database.sqlite" ]; then
   touch /var/www/database/database.sqlite
 fi
 cd /var/www
-composer update
+if [ ! -d "/var/www/vendor" ]; then
+  composer install
+fi
 if [ ! -f "/var/www/.env" ]; then
   cp .env.example .env
   php artisan key:generate

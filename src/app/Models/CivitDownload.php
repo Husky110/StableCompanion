@@ -26,9 +26,24 @@ class CivitDownload extends Model
     ];
 
     // Relations
-    public function existingCheckpoint() : BelongsTo
+    public function existingModel() : BelongsTo
     {
-        return $this->belongsTo(Checkpoint::class, 'civit_id', 'civitai_id');
+        switch ($this->type){
+            case 'checkpoint_sd':
+            case 'checkpoint_xl':
+                return $this->belongsTo(Checkpoint::class, 'civit_id', 'civitai_id');
+                break;
+            case 'lora_sd':
+            case 'lora_xl':
+                return $this->belongsTo(Lora::class, 'civit_id', 'civitai_id');
+                break;
+            case 'embedding_sd':
+            case 'embedding_xl':
+                return $this->belongsTo(Embedding::class, 'civit_id', 'civitai_id');
+                break;
+            default:
+                throw new \Exception('Unknown downloadtype!');
+        }
     }
 
     public static function downloadFileFromCivitAI(CivitAIModelType $modelType, string $modelID, string $modelVersion, bool $syncExamples)
@@ -38,16 +53,43 @@ class CivitDownload extends Model
             $modelVersion
         );
 
+        if($modelType == CivitAIModelType::EMBEDDING){ // special case for Embeddings - see below
+            $downloadURL = $specificModelVersion['files'][0]['downloadUrl'];
+        } else {
+            $downloadURL = $specificModelVersion['downloadUrl'];
+        }
+
         $download = new CivitDownload([
             'civit_id' => $modelID,
             'version' => $modelVersion,
-            'type' => $modelType->value.'_'.(str_contains($specificModelVersion['baseModel'], 'XL') ? 'xl' : 'sd'),
-            'url' => $specificModelVersion['downloadUrl'],
+            'type' => strtolower($modelType->name).'_'.(str_contains($specificModelVersion['baseModel'], 'XL') ? 'xl' : 'sd'),
+            'url' => $downloadURL,
             'status' => 'pending',
             'aria_id' => null,
             'load_examples' => $syncExamples
         ]);
-        $download->save();
+        //$download->save();
         Aria2Connector::sendDownloadToAria2($download);
+        if($modelType == CivitAIModelType::EMBEDDING){ // sometimes we have more than one file and the other one is a negative - or even a positive...
+            if(count($specificModelVersion['files']) > 1 ){
+                for($x = 1; $x <= count($specificModelVersion['files']) - 1; $x++){
+                    if(
+                        $specificModelVersion['files'][$x]['type'] != $specificModelVersion['files'][0]['type'] &&
+                        in_array($specificModelVersion['files'][$x]['type'], ['Model', 'Negative'])
+                    ){
+                        $download = new CivitDownload([
+                            'civit_id' => $modelID,
+                            'version' => $modelVersion,
+                            'type' => strtolower($modelType->name).'_'.(str_contains($specificModelVersion['baseModel'], 'XL') ? 'xl' : 'sd'),
+                            'url' => $specificModelVersion['files'][$x]['downloadUrl'],
+                            'status' => 'pending',
+                            'aria_id' => null,
+                            'load_examples' => $syncExamples
+                        ]);
+                        $download->save();
+                    }
+                }
+            }
+        }
     }
 }

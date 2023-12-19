@@ -10,6 +10,8 @@ class Config extends Model
 {
     public $timestamps = false;
 
+    public $table = 'configs';
+
     public $fillable = [
         'key',
         'value',

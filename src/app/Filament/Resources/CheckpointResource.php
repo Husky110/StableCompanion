@@ -14,9 +14,11 @@ use Illuminate\Support\HtmlString;
 
 class CheckpointResource extends Resource
 {
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $model = Checkpoint::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-sparkles';
+    protected static ?string $navigationIcon = 'heroicon-s-paint-brush';
 
     public static function form(Form $form): Form
     {
@@ -34,18 +36,18 @@ class CheckpointResource extends Resource
                     ->disk('modelimages')
                     ->height(200)
                     ->label(false),
-                Tables\Columns\TextColumn::make('checkpoint_name')
+                Tables\Columns\TextColumn::make('model_name')
                     ->label('Name')
                     ->sortable()
                     ->searchable()
                     ->getStateUsing(function ($record){
-                        if(strlen($record->checkpoint_name) > 20){
-                            return substr($record->checkpoint_name, 0, 20).'...';
+                        if(strlen($record->model_name) > 20){
+                            return substr($record->model_name, 0, 20).'...';
                         } else {
-                            return $record->checkpoint_name;
+                            return $record->model_name;
                         }
                     })
-                    ->tooltip(fn($record) => $record->checkpoint_name),
+                    ->tooltip(fn($record) => $record->model_name),
                 Tables\Columns\TextColumn::make('checkpoint_baseModel')
                     ->label('Base Models')
                     ->getStateUsing(function ($record){
@@ -114,9 +116,9 @@ class CheckpointResource extends Resource
                     ->button()
                     ->action(function ($record){
                         foreach ($record->files as $checkpointFile){
-                            $checkpointFile->deleteCheckpointFile();
+                            $checkpointFile->deleteModelFile();
                         }
-                        $record->deleteCheckpoint();
+                        $record->deleteModel();
                     })
                     ->modalDescription('Are you sure you want to delete this checkpoint? This will also delete all versions and images! Continue?')
             ])
@@ -124,7 +126,7 @@ class CheckpointResource extends Resource
 
             ])
             ->poll('60s')
-            ->defaultSort('checkpoint_name');
+            ->defaultSort('model_name');
     }
 
     public static function getRelations(): array

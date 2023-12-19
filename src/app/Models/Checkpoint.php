@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Http\Helpers\CivitAIConnector;
+use App\Models\DataStructures\CivitAIModelType;
+use App\Models\DataStructures\ModelBaseClass;
+use App\Models\DataStructures\ModelBaseClassInterface;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
-class Checkpoint extends Model
+class Checkpoint extends ModelBaseClass implements ModelBaseClassInterface
 {
     public $timestamps = false;
 
     public $fillable = [
         'image_name',
-        'checkpoint_name',
+        'model_name',
         'civitai_id',
-        'civit_notes',
+        'civitai_notes',
         'user_notes',
     ];
 
@@ -32,73 +35,27 @@ class Checkpoint extends Model
 
     public function files() : HasMany
     {
-        return $this->hasMany(CheckpointFile::class);
+        return $this->hasMany(CheckpointFile::class, 'base_id');
     }
 
-    public function activedownloads() : HasMany
-    {
-        return $this->hasMany(CivitDownload::class, 'civit_id', 'civitai_id');
-    }
+    // -> activedownloads are here by parentclass
 
     // Functions
 
-    public function deleteCheckpoint()
+    public function checkIfOtherVersionsExistOnCivitAi(): array
     {
-        if($this->image_name != 'placeholder.png'){
-            Storage::disk('modelimages')->delete($this->image_name);
-        }
-        $this->tags()->sync([]);
-        $this->delete();
+        return parent::queueCivitAIForOtherVersionsOfThisModel(CheckpointFile::class);
     }
 
-
-    public function setModelImage(array $civitAIModelData) : void
-    {
-        $modelImageDisk = Storage::disk('modelimages');
-        $imageURL = '';
-        $imagename = '';
-        foreach ($civitAIModelData['modelVersions'][0]['images'] as $image){
-            if($image['type'] == 'image'){
-                $imageURL = $image['url'];
-                break;
-            }
-        }
-        if($imageURL){
-            $imagename = basename($imageURL);
-            $modelImageDisk->put($imagename, file_get_contents($imageURL));
-        }
-
-        if($imageURL){
-            $this->image_name = $imagename;
-        }
-        $this->save();
-    }
-
-    public function syncCivitAITags(array $civitAIModelData) : void
-    {
-        $syncArray = [];
-        foreach ($civitAIModelData['tags'] as $civitTag){
-            $tag = Tag::where('tagname', $civitTag)->first();
-            if(!$tag){
-                $tag = new Tag([
-                    'tagname' => $civitTag
-                ]);
-                $tag->save();
-            }
-            $syncArray[] = $tag->id;
-        }
-        $this->tags()->syncWithoutDetaching($syncArray);
-    }
-
-    public static function createNewCheckpointFromCivitAI(array $civitAIModelData, bool $syncTags) : Checkpoint
+    public static function createNewModelFromCivitAI(array $civitAIModelData, bool $syncTags) : static
     {
         $checkpoint = new Checkpoint([
-            'checkpoint_name' => $civitAIModelData['name'],
+            'model_name' => $civitAIModelData['name'],
             'civitai_id' => $civitAIModelData['id'],
         ]);
         $checkpoint->setModelImage($civitAIModelData);
 
-        $checkpoint->civit_notes = $civitAIModelData['description'];
+        $checkpoint->civitai_notes = $civitAIModelData['description'];
         $checkpoint->save();
         if($syncTags){
             $checkpoint->syncCivitAITags($civitAIModelData);
@@ -106,7 +63,7 @@ class Checkpoint extends Model
         return $checkpoint;
     }
 
-    public static function scanCheckpointFolderForNewFiles()
+    public static function checkModelFolderForNewFiles() : void
     {
         $disk = Storage::disk('checkpoints');
         foreach ($disk->allFiles() as $file){
@@ -119,16 +76,26 @@ class Checkpoint extends Model
             $existingCheckpointFile = CheckpointFile::where('filepath', $file)->first();
             if($existingCheckpointFile == null){
                 $newCheckpoint = new Checkpoint([
-                    'checkpoint_name' => basename($file),
+                    'model_name' => basename($file),
                 ]);
                 $newCheckpoint->save();
                 $newCheckpointFile = new CheckpointFile([
-                    'checkpoint_id' => $newCheckpoint->id,
+                    'base_id' => $newCheckpoint->id,
                     'filepath' => $file,
                     'baseModel' => $disk->size($file) < 6442450944 ? 'Some SD-Model' : 'Some XL-Model',
                 ]);
                 $newCheckpointFile->save();
             }
         }
+    }
+
+    public function getCivitAIModelType(): CivitAIModelType
+    {
+        return CivitAIModelType::CHECKPOINT;
+    }
+
+    public static function getModelFileClass(): string
+    {
+        return CheckpointFile::class;
     }
 }

@@ -22,4 +22,9 @@ class Tag extends Model
     {
         return $this->belongsToMany(Checkpoint::class, 'checkpoint_tag');
     }
+
+    public function loras() : BelongsToMany
+    {
+        return $this->belongsToMany(Lora::class, 'lora_tag');
+    }
 }

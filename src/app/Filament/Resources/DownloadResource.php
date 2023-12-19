@@ -19,6 +19,9 @@ use Illuminate\Support\HtmlString;
 
 class DownloadResource extends Resource
 {
+
+    protected static ?int $navigationSort = 0;
+
     protected static ?string $model = CivitDownload::class;
 
     protected static ?string $navigationLabel = 'CivitAI-Downloads';
@@ -59,6 +62,9 @@ class DownloadResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Name')
                     ->getStateUsing(fn($record) => CivitAIConnector::getModelMetaByID($record->civit_id)['name'].' - '.CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($record->civit_id, $record->version)['name']),
+                Tables\Columns\TextColumn::make('link')
+                    ->label('CivitAI-URL')
+                    ->getStateUsing(fn($record) => new HtmlString('<a href="https://civitai.com/models/'.$record->civit_id.'?modelVersionId='.$record->version.'" target="_blank">Link</a>')),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')
                     ->getStateUsing(fn($record) => strtoupper($record->type)),
@@ -109,9 +115,12 @@ class DownloadResource extends Resource
                 Tables\Actions\DeleteAction::make('delete')
                     ->button()
                     ->action(function ($record){
-                        if($record->existingCheckpoint != null){
-                            if($record->existingCheckpoint->files->count() == 0){
-                                $record->existingCheckpoint->deleteCheckpoint();
+                        if($record->status != 'error'){
+                            Aria2Connector::abortDownloadInAria2($record);
+                        }
+                        if($record->existingModel != null){
+                            if($record->existingModel->files->count() == 0 && $record->existingModel->activedownloads->count() == 0){
+                                $record->existingModel->deleteModel();
                             }
                         }
                         $record->delete();
