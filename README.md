@@ -66,7 +66,7 @@ Plus - technically you can use StableCompanion to also manage your models for Co
   7. Run `docker compose up` (if you have the composer-plugin installed, that should work fine aswell) inside the docker-directory and go to http://localhost:7861 - Notice: You can run SC in the background by running `docker compose up -d`, but I recommend running it in foreground on the first start.
   8. The first run might take a bit, since composer has to install all dependencies - just wait a bit until you read `INFO exited: startup (exit status 0; expected)` - Notice: If you read `INFO gave up: startup entered FATAL state, too many start retries too quickly` on start - that's nothing to worry about. The startup-script bites itself a bit with supervisor. As long as php-fpm, nginx and aria are running you are fine. :)
   9. Open SC and visit the Settings-Page
-     1. If you install SC alongside A1111 (and haven't changed the port) you can leave the URL be.
+     1. If you installed SC alongside A1111 (and haven't changed the port) you can replace "localhost" with your current computer-ip.
      2. However - if you have changed the port of A111 or run SC somewhere else in your network (possible if A1111 and SC use a NAS for files) please restart the SC-Container once you change the Setting. (Otherwise there will be problems with detections and such.)
 
 ### Update
