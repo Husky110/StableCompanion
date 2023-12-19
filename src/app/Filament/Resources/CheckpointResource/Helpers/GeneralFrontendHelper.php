@@ -46,10 +46,6 @@ class GeneralFrontendHelper
                             ->columnSpan(2)
                             ->columns()
                             ->schema([
-                                TextInput::make($aiImage->id.'_modelname')
-                                    ->label('Modelname')
-                                    ->default($aiImage->model_name == null ? 'unknown' : $aiImage->model_name)
-                                    ->disabled(),
                                 Textarea::make($aiImage->id.'_positive')
                                     ->default($aiImage->positive)
                                     ->autosize()
@@ -59,6 +55,10 @@ class GeneralFrontendHelper
                                     ->default($aiImage->negative)
                                     ->autosize()
                                     ->label('Negative Prompt')
+                                    ->disabled(),
+                                TextInput::make($aiImage->id.'_modelname')
+                                    ->label('Modelname')
+                                    ->default($aiImage->model_name == null ? 'unknown' : $aiImage->model_name)
                                     ->disabled(),
                                 TextInput::make($aiImage->id.'_sampler')
                                     ->default($aiImage->sampler)
