@@ -41,6 +41,7 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 ## Planned Features
 - Toolbox for testing and playing around
 - Build prompts and store them
+- include Hypernetworks as importable Models (depends on feedback..)
 
 ## Setup
 ### Prerequisites
