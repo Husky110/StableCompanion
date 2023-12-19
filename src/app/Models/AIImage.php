@@ -26,6 +26,7 @@ class AIImage extends Model
         'seed',
         'initial_size',
         'source',
+        'model_name'
     ];
 
     // Relations

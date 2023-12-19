@@ -61,6 +61,7 @@ abstract class ModelFileBaseClass extends Model
                 'seed' => $metaImage['meta']['seed'],
                 'initial_size' => $metaImage['meta']['Size'],
                 'source' => 'CivitAI',
+                'model_name' => isset($metaImage['meta']['Model']) ? $metaImage['meta']['Model'] : null,
             ]);
             $image->save();
             if($counter == 10){

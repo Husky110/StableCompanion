@@ -31,15 +31,14 @@ Plus - technically you can use StableCompanion to also manage your models for Co
 </figure>
 
 ## Working Features
-### Checkpoints
-  - Management of existing checkpoints (CRUD)
-  - Import checkpoints from CivitAI
+### Checkpoints, LoRAs, Embeddings
+  - Management of existing models (CRUD)
+  - Import models from CivitAI
   - Link exisiting files to a CivitAI-Model
-  - Update checkpoints from CivitAI
+  - Update models from CivitAI
+  - Preview-Images for A1111
 
 ## Planned Features
-- Import LoRAs and Embeddings from CivitAI
-- Manage your Checkpoints, LoRAs and Embeddings
 - Toolbox for testing and playing around
 - Build prompts and store them
 
@@ -61,24 +60,26 @@ Plus - technically you can use StableCompanion to also manage your models for Co
         - IMPORTANT: DO __NOT__ POINT THIS TO A SYMLINK! If you've symlinked your directories for A1111, please enter the destination-path here and not the symlink! Docker can't work with those! 
      2. Set the URL accordingly -> if you run A1111 and SC on your local machine, just leave it be. If you are in a network and want SC to be reachable change it to http://<IP OR COMPUTERNAME>:7861
   4. Run `docker compose build` and wait for it to finish.
-  5. Run `docker compose up` (if you have the composer-plugin installed, that should work fine aswell) inside the docker-directory and go to http://localhost:7861 - Notice: You can run SC in the background by running `docker compose up -d`, but I recommend running it in foreground on the first start.
-  6. The first run might take a bit, since composer has to install all dependencies - just wait a bit until you read `INFO exited: startup (exit status 0; expected)` - Notice: If you read `INFO gave up: startup entered FATAL state, too many start retries too quickly` on start - that's nothing to worry about. The startup-script bites itself a bit with supervisor. As long as php-fpm, nginx and aria are running you are fine. :) 
-  7. Fireup A1111-WebUI (if not already up)
-  8. Open SC and visit the Settings-Page
+  5. Fireup A1111-WebUI (if not already up)
+  6. Run `docker compose up` (if you have the composer-plugin installed, that should work fine aswell) inside the docker-directory and go to http://localhost:7861 - Notice: You can run SC in the background by running `docker compose up -d`, but I recommend running it in foreground on the first start.
+  7. The first run might take a bit, since composer has to install all dependencies - just wait a bit until you read `INFO exited: startup (exit status 0; expected)` - Notice: If you read `INFO gave up: startup entered FATAL state, too many start retries too quickly` on start - that's nothing to worry about. The startup-script bites itself a bit with supervisor. As long as php-fpm, nginx and aria are running you are fine. :)
+  9. Open SC and visit the Settings-Page
      1. If you install SC alongside A1111 (and haven't changed the port) you can leave the URL be.
      2. However - if you have changed the port of A111 or run SC somewhere else in your network (possible if A1111 and SC use a NAS for files) please restart the SC-Container once you change the Setting. (Otherwise there will be problems with detections and such.)
 
 ### Update
-  1. Run `git pull` inside the repo-folder
-  2. Cd into the docker-directory and run `docker compose build`
-  3. Run `docker compose up`
+  1. cd into the repo-folder
+  2. if you have SC running in the background, run `docker stop companion_frontend`
+  3. Run `git pull` inside the repo-folder
+  4. Cd into the docker-directory and run `docker compose build`
+  5. Run `docker compose up` or `docker compose up -d` 
 
 ### Usage
   There are some "rules" you should follow when using StableCompanion. Here they are:
-- Do NOT rename files within the checkpoints-, loras- or embedding-directory (that also includes changing file-extensions)! StableCompanion will detect them as "new" files which will lead to duplicates in the database!
-- StableCompanion does create the folders "sd" and "xl" inside your checkpoint-, lora- and embedding-volumes. This is done to provide a file-separation for regular models and Xl-stuff. 
-- When you import a checkpoint, lora, or embedding from CivitAI - StableCompanion will put the CivitAI-ID and -versionID in front of the filename. This is so that a new import or update does not accidentally overwrite an existing file if the model-maintainer keeps using repetitive filenames.
-- Within each folder (checkpoints, loras, embeddings) you can create a directory with the name "no_scan" - StableCompanion scans your files recursively, but EXPLICITLY ignore that directory. In there you can put all your files that are still in training or should not be used by StableCompanion at all.
+- Do NOT rename files within the checkpoints-, loras- or embedding-directory (that also includes changing file-extensions)! SC will detect them as "new" files which will lead to duplicates in the database! There is a feature in SC for doing that!
+- SC does create the folders "sd" and "xl" inside your checkpoint-, lora- and embedding-volumes. This is done to provide a file-separation for regular models and Xl-stuff. That behaviour might lead to confusing lists inside A1111 or whatever you are using. 
+- When you import a checkpoint, lora, or embedding from CivitAI - SC will try to keep the original-filename. If the model-uploader gave the same filename multiple times, SC will append the current timestamp to the filename. This might change prompting behavior!
+- Within each folder (checkpoints, loras, embeddings) you can create a directory with the name "no_scan" - StableCompanion scans your files recursively, but EXPLICITLY ignores that directory. In there you can put all your files that are still in training or should not be used by StableCompanion at all.
 - All requests against the CivitAI-API are beeing cached for one hour or until the container is restarted. I just try to play nice here - so please follow suit. If you wanna look for updates - there are buttons for that you can hit once every hour.
 - RTFM and READ THE TEXTS ON SCREEN! I've tried to make you aware of what is happening in every step, so please read what is on screen and make conscious clicks. :)
 - When you do some multistep-process and click on "Submit" it can seem that nothing happens. Just wait a bit! I had to do some wizardry to get the UI I wanted, but it is not very responsive in some instances. :)
@@ -89,6 +90,7 @@ Since there are no "Frequently asked questions" yet I'm doing a "Possible asked 
 - All the talk about "Linking to CivitAI" inside the software - do you send data there? -> Nope. Everything runs locally on your machine. There are downloads, but no uploads!
 - Is there a way to import a specific image from CivitAI? -> Unfortunately the CivitAI-API is borked when it comes to this and so far no one was able to tell me how that should work. I get empty results when I try `https://civitai.com/api/v1/images?postId=123`
 - Can I import all the images of a checkpoint/lora/embedding? -> Nope. StableCompanion relies on the CivitAI-API and that gives me only 10 images max. Plus - see above.
+- When I look at an image - the modelname looks weird and is "unknown" sometimes. Can't you just link the used checkpoint? -> CivitAI only tells me a filename without an extension. You heve to search the model manually. The only exceptions to that are checkpoints - if the image is inside a checkpoint, it should have been made using that checkpoint.
 - Sometimes Checkpoints and LoRAs have usage tips (like Clip Skip) - where can I find those in SC? -> Unfortunately nowhere. The CivitAI-API does not give me those. For now - I recommend keeping the model-tab open until the model is imported and put those in your user-notes.
 - Will you optimize this for mobile-devices? -> Well - I will not. If you really need that, feel encouraged to make a PR. :)
 - Whenever I import something from CivitAI, the number of downloads in the left menu does not go up. Actually - it does not change at all until I reload or change the page! Why? -> That is one of the weak points of Filament. AFAIK there is no solution to that right now.
