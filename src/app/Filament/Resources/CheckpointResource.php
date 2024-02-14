@@ -32,6 +32,9 @@ class CheckpointResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable(),
                 Tables\Columns\ImageColumn::make('image_name')
                     ->disk('modelimages')
                     ->height(200)
