@@ -328,7 +328,9 @@ class GeneralFrontendHelper
                 $oldFile->base_id = $exisitingModel->id;
                 $oldFile->civitai_version = $data['files'][$oldFile->id]['version'];
                 $modelFileSpecificData = CivitAIConnector::getSpecificModelVersionByModelIDAndVersionID($data['modelID'], $oldFile->civitai_version);
-                $oldFile->civitai_description = $modelFileSpecificData['description'];
+                if(isset($modelFileSpecificData['description'])){
+                    $oldFile->civitai_description = $modelFileSpecificData['description'];
+                }
                 switch ($model::class){
                     case Checkpoint::class:
                         $oldFile->baseModel = $modelFileSpecificData['baseModel'];
