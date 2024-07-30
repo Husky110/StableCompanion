@@ -59,7 +59,6 @@ class ViewLora extends ViewRecord
     {
         return [
             ViewModelHelper::buildCivitAILinkingAction($this->record),
-            ViewModelHelper::buildDownloadAdditionalVersionsAction($this->record),
         ];
     }
 

@@ -12,6 +12,9 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Get;
 
+/**
+ * Not beeing used for downloads anymore! But I need the URL-Helper here...
+ */
 class CivitAIDownloadHelper
 {
     public static function buildURLStep(CivitAIModelType $typeForURL, bool $stepForLinking = false): Wizard\Step
@@ -69,51 +72,5 @@ class CivitAIDownloadHelper
                 $set('modelID', $modelID);
                 $set('model_name', CivitAIConnector::getModelMetaByID($modelID)['name']);
             });
-    }
-
-    public static function buildVersionSelectForDownloadWizardStep(CivitAIModelType $modelType) : Wizard\Step
-    {
-        return Wizard\Step::make('Selection')
-            ->description('Details and Download')
-            ->schema([
-                Hidden::make('modelID'),
-                Hidden::make('versions')->live(),
-                TextInput::make('model_name')
-                    ->label('Modelname')
-                    ->live()
-                    ->disabled(),
-                Select::make('download_versions')
-                    ->label('Select Versions')
-                    ->options(function ($get){
-                        return json_decode($get('versions'), true);
-                    })
-                    ->multiple()
-                    ->required()
-                    ->hint('Sorting is newest to oldest.'),
-                Toggle::make('sync_tags')
-                    ->label('Sync tags from CivitAI')
-                    ->hint('Synchronizes the tags from CivitAI with the checkpoint.')
-                    ->default(true),
-                Toggle::make('sync_examples')
-                    ->label('Download example-images')
-                    ->default(true)
-                    ->hint('The CivitAI-API provides up to 10 images. We sync only images and only those that have complete informations.'),
-            ]);
-    }
-
-    public static function generateFileNameForDownloadedModel(string $sourceFilename, string $destinationPath) : string
-    {
-        // we're taking the standard-filename, but we check if that already exists. If so - we modify that, so that there are no conflicts
-        // this can happen if the modeluploader gave the same filename multiple times...
-        if(file_exists($destinationPath)){
-            $sourceFileComponents = explode('.', $sourceFilename);
-            $fileExtention = $sourceFileComponents[count($sourceFileComponents) - 1];
-            unset($sourceFileComponents[count($sourceFileComponents) - 1]);
-            $sourceFileComponents[count($sourceFileComponents) - 1] .= '_'.time();
-            $newSourceFilename = implode('.', $sourceFileComponents).'.'.$fileExtention;
-            return str_replace($sourceFilename, $newSourceFilename, $destinationPath);
-        } else {
-            return $destinationPath;
-        }
     }
 }

@@ -4,12 +4,14 @@ namespace App\Filament\Helpers;
 
 use App\Http\Helpers\CivitAIConnector;
 use App\Http\Helpers\GeneralHelper;
+use App\Models\Checkpoint;
 use App\Models\CheckpointFile;
 use App\Models\CivitDownload;
 use App\Models\DataStructures\CivitAIModelType;
 use App\Models\DataStructures\ModelBaseClassInterface;
 use App\Models\Embedding;
 use App\Models\EmbeddingFile;
+use App\Models\Lora;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -28,8 +30,19 @@ class ViewModelHelper
 {
     public static function buildCivitAILinkingAction($record) : Action
     {
+        switch ($record->getCivitAIModelType()){
+            case CivitAIModelType::CHECKPOINT:
+                $recordType = 'Checkpoint';
+                break;
+            case CivitAIModelType::EMBEDDING:
+                $recordType = 'LoRa';
+                break;
+            case CivitAIModelType::LORA:
+                $recordType = 'Embedding';
+                break;
+        }
         return Action::make('link_to_civitai')
-            ->label('Link this Embedding to CivitAI-Model')
+            ->label('Link this '.$recordType.' to CivitAI-Model')
             ->modalDescription('Beware: You do this on your own accountability! If you link this to a wrong model, that\'s on you! I can\'t really check that what you do here is correct. If you add an URL of an already existing model, it will be linked to that. (Sorry - can\'t really put a Embedding-Selector here...)')
             ->button()
             ->visible(!(bool)$record->civitai_id)
@@ -53,6 +66,8 @@ class ViewModelHelper
             ->modalSubmitAction(false)
             ->modalCancelAction(false);
     }
+
+
 
     private static function buildCivitAILinkingWizard(ModelBaseClassInterface $oldModel): Wizard
     {
@@ -103,35 +118,6 @@ class ViewModelHelper
                 }
                 return $retval;
             });
-    }
-
-    public static function buildDownloadAdditionalVersionsAction($record) : Action
-    {
-        return Action::make('download_additional_versions')
-            ->label('Download additional versions')
-            ->button()
-            ->modalDescription('With this you can add other/older versions of this model to your collection.')
-            ->form(function () use ($record){
-                return [
-                    Select::make('versions')
-                        ->label('Pick your versions')
-                        ->multiple()
-                        ->options($record->checkIfOtherVersionsExistOnCivitAi()),
-                    Toggle::make('sync_images')
-                        ->label('Sync example-images'),
-                ];
-            })
-            ->action(function ($data) use ($record){
-                foreach ($data['versions'] as $version){
-                    CivitDownload::downloadFileFromCivitAI(
-                        $record->getCivitAIModelType(),
-                        $record->civitai_id,
-                        $version,
-                        $data['sync_images']
-                    );
-                }
-            })
-            ->visible( count($record->checkIfOtherVersionsExistOnCivitAi()) > 0);
     }
 
     public static function buildChangeNameAction($record) : \Filament\Infolists\Components\Actions
@@ -319,7 +305,7 @@ class ViewModelHelper
                 ->inlineLabel()
                 ->getStateUsing($modelFile->civitai_version ? new HtmlString('<a href="'.CivitAIConnector::buildCivitAILinkByModelAndVersionID($modelFile->parentModel->civitai_id, $modelFile->civitai_version).'" target="_blank">'.$modelFile->civitai_version.'</a>') : '')
                 ->visible((bool)$modelFile->civitai_version),
-            TextEntry::make('base_model')
+            TextEntry::make('baseModel')
                 ->inlineLabel()
                 ->label('Base Model:')
                 ->getStateUsing($modelFile->baseModelType),

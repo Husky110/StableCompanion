@@ -25,7 +25,6 @@ class ListLoras extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            GeneralFrontendHelper::getImportFromCivitAIAction(CivitAIModelType::LORA),
             GeneralFrontendHelper::buildScanModelFolderAction(CivitAIModelType::LORA),
             GeneralFrontendHelper::buildScanForModelUpdatesAction(CivitAIModelType::LORA)
         ];

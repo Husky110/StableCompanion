@@ -25,7 +25,6 @@ class ListCheckpoints extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            GeneralFrontendHelper::getImportFromCivitAIAction(CivitAIModelType::CHECKPOINT),
             GeneralFrontendHelper::buildScanModelFolderAction(CivitAIModelType::CHECKPOINT),
             GeneralFrontendHelper::buildScanForModelUpdatesAction(CivitAIModelType::CHECKPOINT)
         ];

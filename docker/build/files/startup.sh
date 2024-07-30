@@ -14,5 +14,3 @@ fi
 php artisan migrate --force
 php artisan stablecompanion:clear-civitaicache
 php artisan stablecompanion:scan-for-files
-sleep 10s
-php artisan stablecompanion:resume-active-downloads

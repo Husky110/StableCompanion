@@ -9,7 +9,6 @@ WORKDIR /var/www
 # Install packages and remove default server definition
 # TODO: I'm taking this from another project - maybe remove the unneccesary packages
 RUN apk add --no-cache \
-  aria2 \
   curl \
   nginx \
   php81 \
@@ -52,8 +51,6 @@ COPY /files/fpm-pool.conf /etc/php81/php-fpm.d/www.conf
 
 # Configure supervisord
 COPY /files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-COPY --chown=1000:1000 /files/aria_scripts /aria_scripts
 
 #bringing in the startup-script
 COPY --chown=1000:1000 /files/startup.sh /startup.sh

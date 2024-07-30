@@ -25,7 +25,6 @@ class ListEmbeddings extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            GeneralFrontendHelper::getImportFromCivitAIAction(CivitAIModelType::EMBEDDING),
             GeneralFrontendHelper::buildScanModelFolderAction(CivitAIModelType::EMBEDDING),
             GeneralFrontendHelper::buildScanForModelUpdatesAction(CivitAIModelType::EMBEDDING)
         ];

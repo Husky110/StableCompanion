@@ -44,7 +44,7 @@ class ViewCheckpoint extends ViewRecord
     public function getSubheading(): string|Htmlable|null
     {
         if($this->record->files->count() == 0){
-            return 'This checkpoint is still beeing downloaded! Please come back once it\'s finished.';
+            return 'This checkpoint has no files or they have been deleted.';
         } else {
             return null;
         }
@@ -59,7 +59,6 @@ class ViewCheckpoint extends ViewRecord
     {
         return [
             ViewModelHelper::buildCivitAILinkingAction($this->record),
-            ViewModelHelper::buildDownloadAdditionalVersionsAction($this->record),
         ];
     }
 
