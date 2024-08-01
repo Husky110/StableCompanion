@@ -80,10 +80,20 @@ class Lora extends ModelBaseClass implements ModelBaseClassInterface
                     'model_name' => basename($file),
                 ]);
                 $newLora->save();
+                $loraType = 'unknown';
+                if(str_contains($file, 'sd')){
+                    $loraType = 'SD 1.5';
+                }
+                if(str_contains($file, 'xl')){
+                    $loraType = 'SDXL';
+                }
+                if(str_contains($file, 'pony')){
+                    $loraType = 'Pony';
+                }
                 $newLoraFile = new LoraFile([
                     'base_id' => $newLora->id,
                     'filepath' => $file,
-                    'baseModelType' => LoraFile::determineLoraTypeByFilename($file)
+                    'baseModelType' => $loraType,
                 ]);
                 $newLoraFile->save();
             }

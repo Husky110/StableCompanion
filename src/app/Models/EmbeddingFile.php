@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Http\Helpers\CivitAIConnector;
-use App\Http\Helpers\WebUIConnector;
 use App\Models\DataStructures\ModelFileBaseClass;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

@@ -221,12 +221,6 @@ class GeneralFrontendHelper
                                 $modelFile->deleteModelFile();
                             }
                         }
-                        CivitDownload::downloadFileFromCivitAI(
-                            $modelType,
-                            $model->civitai_id,
-                            CivitAIConnector::getModelMetaByID($model->civitai_id)['modelVersions'][0]['id'],
-                            $updateSettings['sync_images']
-                        );
                     }
                 }
             });
