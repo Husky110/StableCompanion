@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class LoraResource extends Resource
@@ -90,7 +91,18 @@ class LoraResource extends Resource
                             $tagNames = substr($tagNames, 0, -2);
                         }
                         return new HtmlString($tagNames);
-                    })
+                    }),
+                Tables\Columns\TextColumn::make('missing_files')
+                    ->label('Missing files')
+                    ->alignCenter()
+                    ->getStateUsing(function ($record){
+                        $disk = Storage::disk('loras');
+                        foreach ($record->files() as $file){
+                            if(!$disk->exists($file->filepath)){
+                                return 'Yes';
+                            }
+                        }
+                    }),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('tags')

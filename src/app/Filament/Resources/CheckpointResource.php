@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class CheckpointResource extends Resource
@@ -86,7 +87,18 @@ class CheckpointResource extends Resource
                             $tagNames = substr($tagNames, 0, -2);
                         }
                         return new HtmlString($tagNames);
-                    })
+                    }),
+                Tables\Columns\TextColumn::make('missing_files')
+                    ->label('Missing files')
+                    ->alignCenter()
+                    ->getStateUsing(function ($record){
+                        $disk = Storage::disk('checkpoints');
+                        foreach ($record->files() as $file){
+                            if(!$disk->exists($file->filepath)){
+                                return 'Yes';
+                            }
+                        }
+                    }),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('tags')
