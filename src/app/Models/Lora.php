@@ -90,6 +90,9 @@ class Lora extends ModelBaseClass implements ModelBaseClassInterface
                 if(str_contains($file, 'pony')){
                     $loraType = 'Pony';
                 }
+                if(str_contains($file, 'flux')){
+                    $loraType = 'Flux';
+                }
                 $newLoraFile = new LoraFile([
                     'base_id' => $newLora->id,
                     'filepath' => $file,
