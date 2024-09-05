@@ -97,11 +97,12 @@ class LoraResource extends Resource
                     ->alignCenter()
                     ->getStateUsing(function ($record){
                         $disk = Storage::disk('loras');
-                        foreach ($record->files() as $file){
+                        foreach ($record->files as $file){
                             if(!$disk->exists($file->filepath)){
                                 return 'Yes';
                             }
                         }
+                        return 'No';
                     }),
             ])
             ->filters([

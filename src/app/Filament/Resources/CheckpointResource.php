@@ -93,11 +93,12 @@ class CheckpointResource extends Resource
                     ->alignCenter()
                     ->getStateUsing(function ($record){
                         $disk = Storage::disk('checkpoints');
-                        foreach ($record->files() as $file){
+                        foreach ($record->files as $file){
                             if(!$disk->exists($file->filepath)){
                                 return 'Yes';
                             }
                         }
+                        return 'No';
                     }),
             ])
             ->filters([
